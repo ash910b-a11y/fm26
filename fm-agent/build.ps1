@@ -530,11 +530,11 @@ $playerList = @($csvPlayerNames)
     P ""
     P "## 표준 표기"
     P ""
-    P "**대회** — " + ($compList -join ' · ')
+    P ("**대회** — " + ($compList -join ' · '))
     P ""
-    P "**팀** — " + ($teamList -join ' · ')
+    P ("**팀** — " + ($teamList -join ' · '))
     P ""
-    P "**선수** — " + ($playerList -join ' · ')
+    P ("**선수** — " + ($playerList -join ' · '))
     [System.IO.File]::WriteAllText((Join-Path $root 'screenshot-prompt.md'), $pp.ToString(), (New-Object System.Text.UTF8Encoding $false))
 
 # --- digest.md 생성 --------------------------------------------------------
