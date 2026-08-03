@@ -1,0 +1,46 @@
+[
+  {
+    "role": "CM",
+    "description": "Links defense and attack, supporting both offensive and defensive phases.",
+    "key_attributes": ["Passing", "Tackling", "Decisions", "First Touch", "Teamwork"],
+    "instructions": []
+  },
+  {
+    "role": "WCM",
+    "description": "Operates on the flank of the midfield, linking play and using diagonal passes to escape pressure.",
+    "key_attributes": ["Passing", "Tackling", "Decisions", "First Touch", "Teamwork"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "wider" }
+    ]
+  },
+  {
+    "role": "MPM",
+    "description": "Receives passes from deep positions and advances into the attacking midfield line, roaming to create passing options as a creative threat.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "AMC",
+    "description": "Finds space between the lines to create chances and act as a goal threat.",
+    "key_attributes": ["Long Shots", "Off the Ball", "Passing", "First Touch", "Technique", "Flair", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "AP",
+    "description": "Finds gaps between the lines to receive the ball, roaming to create passing options and deliver decisive passes in the final third.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "CHM",
+    "description": "Breaks into channels and underlaps to link with wide attackers and provide dangerous crosses.",
+    "key_attributes": ["Crossing", "Off the Ball", "Passing", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  }
+]

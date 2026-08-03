@@ -1,0 +1,13 @@
+{
+  "_comment": "FM 선수 화면의 발 칸수(1~6)를 능력치 범위(1~20)로 옮기는 기준. 감독이 관측해 확정한 모델이며 게임이 직접 준 숫자가 아니다. 칸수는 구간이므로 단일 값이 아니라 범위로만 말한다.",
+  "source": "감독 관측",
+  "unit": "칸",
+  "bands": [
+    { "칸": 1, "label": "Very Weak",     "min": 1,  "max": 5 },
+    { "칸": 2, "label": "Weak",          "min": 6,  "max": 8 },
+    { "칸": 3, "label": "Reasonable",    "min": 9,  "max": 11 },
+    { "칸": 4, "label": "Fairly Strong", "min": 12, "max": 14 },
+    { "칸": 5, "label": "Strong",        "min": 15, "max": 17 },
+    { "칸": 6, "label": "Very Strong",   "min": 18, "max": 20, "note": "주발" }
+  ]
+}

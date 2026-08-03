@@ -1,0 +1,167 @@
+{
+  "mentality": [
+    "very_defensive",
+    "defensive",
+    "cautious",
+    "balanced",
+    "positive",
+    "attacking",
+    "very_attacking"
+  ],
+  "team": {
+    "in_possession": {
+      "passing": [
+        "very_short",
+        "short",
+        "standard",
+        "long",
+        "very_long"
+      ],
+      "tempo": [
+        "much_lower",
+        "lower",
+        "standard",
+        "higher",
+        "much_higher"
+      ],
+      "width": [
+        "very_narrow",
+        "narrow",
+        "standard",
+        "wide",
+        "very_wide"
+      ],
+      "transition": [
+        "hold_shape",
+        "standard",
+        "counter"
+      ],
+      "creativity": [
+        "disciplined",
+        "balanced",
+        "expressive"
+      ]
+    },
+    "progression": {
+      "dribbling": [
+        "less",
+        "standard",
+        "more"
+      ],
+      "overlap": [
+        "left_overlap",
+        "right_overlap",
+        "both_overlap",
+        "left_underlap",
+        "right_underlap",
+        "both_underlap",
+        "off"
+      ],
+      "focus_play": [
+        "left",
+        "center",
+        "right",
+        "both_flanks",
+        "mixed"
+      ],
+      "passing_style": [
+        "to_feet",
+        "standard",
+        "into_space"
+      ]
+    },
+    "final_third": {
+      "chance_creation": [
+        "work_ball_into_box",
+        "standard",
+        "shoot_on_sight"
+      ],
+      "long_shots": [
+        "less",
+        "standard",
+        "more"
+      ],
+      "cross_style": [
+        "mixed",
+        "floated",
+        "low",
+        "whipped"
+      ]
+    },
+    "build_up": {
+      "build_up_style": [
+        "play_out_of_defence",
+        "standard",
+        "clear_it"
+      ],
+      "goal_kicks": [
+        "short",
+        "mixed",
+        "long"
+      ],
+      "distribution_speed": [
+        "quick",
+        "standard",
+        "slow"
+      ],
+      "distribution_target": [
+        "center_backs",
+        "full_backs",
+        "playmaker",
+        "flanks",
+        "behind_defence",
+        "mixed"
+      ]
+    },
+    "out_of_possession": {
+      "pressing_line": [
+        "low_block",
+        "mid_block",
+        "high_block"
+      ],
+      "defensive_line": [
+        "much_lower",
+        "lower",
+        "standard",
+        "higher",
+        "much_higher"
+      ],
+      "line_behavior": [
+        "drop_off",
+        "standard",
+        "step_up"
+      ],
+      "pressing_intensity": [
+        "much_less",
+        "less",
+        "standard",
+        "more",
+        "much_more"
+      ],
+      "defensive_transition": [
+        "regroup",
+        "standard",
+        "counter_press"
+      ],
+      "tackling": [
+        "ease_off",
+        "standard",
+        "hard"
+      ],
+      "press_trap": [
+        "outside",
+        "standard",
+        "inside"
+      ],
+      "prevent_short_gk_distribution": [
+        true,
+        false
+      ],
+      "stop_crosses": [
+        "stop",
+        "standard",
+        "allow"
+      ]
+    }
+  }
+}

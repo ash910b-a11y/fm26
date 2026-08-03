@@ -1,0 +1,28 @@
+[
+  {
+    "role": "FB",
+    "description": "Primarily defends but pushes forward to provide width and support attacks via overlaps, staying disciplined in his zone during defensive transitions.",
+    "key_attributes": ["Marking", "Tackling", "Anticipation", "Positioning", "Teamwork", "Acceleration", "Concentration"],
+    "instructions": []
+  },
+  {
+    "role": "WB",
+    "description": "Provides a passing option in build-up and gets further forward to maintain width and support the attack in the final third.",
+    "key_attributes": ["Crossing", "Marking", "Tackling", "Teamwork", "Work Rate", "Acceleration", "Stamina", "Pace"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "IWB",
+    "description": "Moves centrally during attacks to act as an extra defensive midfielder, staying disciplined in his zone to support possession.",
+    "key_attributes": ["Passing", "Tackling", "Anticipation", "Decisions", "Positioning", "Teamwork", "Acceleration", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "IFB",
+    "description": "Tucks inside to act as an extra central defender during attacks, strengthening the defense against counter-attacks.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Strength"],
+    "instructions": []
+  }
+]

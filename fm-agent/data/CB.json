@@ -1,0 +1,19 @@
+[
+  {
+    "role": "CB",
+    "description": "Protects the team, staying composed in possession-based systems to support build-up with simple passing to creative teammates.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "BCB",
+    "description": "Similar to the CB but attempts line-breaking and through passes from deep, pushing forward whenever possible in an attacking role.",
+    "key_attributes": ["Heading", "Marking", "Passing", "Tackling", "Anticipation", "Positioning", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false },
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  }
+]

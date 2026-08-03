@@ -1,0 +1,31 @@
+[
+  {
+    "role": "W",
+    "description": "Stays wide to stretch the defense, providing a creative threat through crosses and passes in the final third.",
+    "key_attributes": ["Crossing", "Dribbling", "Technique", "Teamwork", "Acceleration", "Pace", "Agility"],
+    "instructions": []
+  },
+  {
+    "role": "IF",
+    "description": "Cuts inside from the half-space to act as a direct goal threat and link up with wing-backs.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Anticipation", "First Touch", "Technique", "Acceleration", "Agility", "Composure"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "WFD",
+    "description": "Starts wide and cuts inside to act as a direct goal threat.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Anticipation", "First Touch", "Technique", "Acceleration", "Pace", "Agility"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" },
+      { "field": "player.passing_length", "value": "short" }
+    ]
+  },
+  {
+    "role": "IW",
+    "description": "Cuts inside from the half-space to provide a creative threat and link up with wing-backs.",
+    "key_attributes": ["Dribbling", "First Touch", "Technique", "Teamwork", "Acceleration", "Agility", "Composure"],
+    "instructions": []
+  }
+]

@@ -1,0 +1,37 @@
+[
+  {
+    "role": "BGK",
+    "description": "roaming to create passing options",
+    "key_attributes": [
+      "볼 핸들링",
+      "공중 장악력",
+      "페널티 박스 장악력",
+      "수비 조율",
+      "골킥",
+      "수비 위치 선정",
+      "반사 신경",
+      "민첩성"
+    ],
+    "instructions": [
+      {
+        "field": "player.passing_risk",
+        "value": "risky"
+      }
+    ]
+  },
+  {
+    "role": "GK",
+    "description": "keeping possession",
+    "key_attributes": [
+      "볼 핸들링",
+      "공중 장악력",
+      "페널티 박스 장악력",
+      "수비 조율",
+      "수비 위치 선정",
+      "반사 신경",
+      "민첩성",
+      "집중력"
+    ],
+    "instructions": []
+  }
+]

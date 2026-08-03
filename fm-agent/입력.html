@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경기 입력 — 웨스트햄</title>
+<style>
+  :root {
+    --accent: #3f7fff; --bg: #0d1117; --panel: #161b22; --line: #262d36;
+    --text: #e6edf3; --muted: #8b949e; --win: #3fb950; --draw: #d29922; --loss: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 24px 80px; background: var(--bg); color: var(--text);
+         font-family: "Pretendard", "Malgun Gothic", -apple-system, system-ui, sans-serif; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  h1 span { color: var(--accent); }
+  .lead { color: var(--muted); font-size: 13px; margin: 0 0 26px; line-height: 1.7; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+            padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 13px; margin: 0 0 14px; color: var(--muted); font-weight: 600; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  input, select, textarea {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 9px; font: inherit; font-size: 13px;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 54px; }
+  .unc { font-size: 10px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .unc input { width: auto; }
+  .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .sides h3 { font-size: 12px; margin: 0 0 12px; color: var(--text); font-weight: 600; }
+  .sides h3 small { color: var(--muted); font-weight: 400; }
+  .dyn { display: flex; flex-direction: column; gap: 8px; }
+  .dyn .item { display: grid; grid-template-columns: 70px 1fr 1.2fr; gap: 8px; align-items: center; }
+  .dyn .item.goal { grid-template-columns: 64px 1fr 1fr 0.9fr; }
+  .dyn .item.lineup { grid-template-columns: 60px 1fr 70px 70px 32px; }
+  .dyn .head { display: grid; gap: 8px; font-size: 10px; color: var(--muted); }
+  .dyn .head.goal { grid-template-columns: 64px 1fr 1fr 0.9fr; }
+  .hint { font-size: 11px; color: var(--muted); }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 7px;
+           padding: 9px 16px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
+  button.ghost:hover { color: var(--text); border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .bar { position: sticky; bottom: 0; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 10px; padding: 14px 18px; display: flex; gap: 12px; align-items: center; }
+  .bar .fname { font-size: 12px; color: var(--muted); font-family: ui-monospace, Consolas, monospace; }
+  .bar .spacer { margin-left: auto; }
+  .checks { font-size: 12.5px; line-height: 1.8; margin: 0 0 14px; }
+  .checks .ok { color: var(--win); }
+  .checks .bad { color: var(--loss); }
+  .checks .warn { color: var(--draw); }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px;
+        font-size: 11.5px; line-height: 1.55; overflow: auto; max-height: 340px; margin: 0;
+        font-family: ui-monospace, Consolas, monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>경기 입력 <span id="ourTeam"></span></h1>
+  <p class="lead">
+    채워 넣고 아래 <b>JSON 내려받기</b>를 누르면 파일명까지 맞춰서 저장됩니다.
+    그 파일을 <b>matches/</b> 폴더에 옮긴 뒤 build.ps1을 실행하세요.<br>
+    모르는 값은 <b>비워 두세요.</b> 억지로 채우는 것보다 비는 게 낫습니다.
+    화면에서 읽었지만 확신이 없으면 각 칸 아래 <b>불확실</b>을 체크하세요.
+  </p>
+
+  <section>
+    <h2>기본</h2>
+    <div class="row">
+      <div><label>날짜</label><input type="date" id="date"></div>
+      <div><label>시즌 (날짜에서 자동)</label><input id="season" placeholder="2025/26"></div>
+      <div><label>대회</label><select id="competition"></select></div>
+      <div><label>상대</label><select id="opponent"></select></div>
+      <div><label>장소</label><select id="venue"><option value="home">홈</option><option value="away">원정</option></select></div>
+      <div><label>경기장 (선택)</label><input id="stadium" placeholder="셀허스트 파크"></div>
+      <div><label>상대 포메이션 (선택)</label><input id="opponent_formation" list="formations" placeholder="4-3-3"></div>
+    </div>
+    <datalist id="formations">
+      <option value="4-4-2"><option value="4-4-1-1"><option value="4-2-3-1"><option value="4-3-3">
+      <option value="4-1-4-1"><option value="4-2-2-2"><option value="4-3-1-2"><option value="4-5-1">
+      <option value="3-4-3"><option value="3-5-2"><option value="3-4-1-2"><option value="3-1-4-2">
+      <option value="5-3-2"><option value="5-4-1"><option value="5-2-1-2"><option value="4-1-2-1-2">
+    </datalist>
+    <div class="row" style="margin-top:12px">
+      <div><label>우리 득점</label><input type="number" id="us" min="0" value="0"></div>
+      <div><label>상대 득점</label><input type="number" id="them" min="0" value="0"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>팀 통계</h2>
+    <div class="sides">
+      <div><h3>우리 <small id="usName"></small></h3><div id="statsUs"></div></div>
+      <div><h3>상대 <small id="themName"></small></h3><div id="statsThem"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>득점자 <span class="hint" id="scorerHint"></span></h2>
+    <div class="dyn" id="scorers"></div>
+    <p class="hint" style="margin:10px 0 0">우리 득점 수에 맞춰 칸이 생깁니다.</p>
+  </section>
+
+  <section>
+    <h2>선수 평점 (선택) <span class="hint">특기할 선수만 넣으면 됩니다</span></h2>
+    <div class="dyn" id="lineup"></div>
+    <div style="margin-top:12px; display:flex; gap:8px">
+      <button class="ghost" type="button" onclick="addLineup()">+ 선수 추가</button>
+      <button class="ghost" type="button" onclick="for(let i=0;i&lt;11;i++) addLineup()">11명 한번에</button>
+    </div>
+    <p class="hint" style="margin:10px 0 0">
+      <b>선발 11명은 이름만이라도 넣어주세요.</b> 평점 칸은 비워도 됩니다 —
+      이름만 있으면 <b>조합 승률·선수별 출전 승률</b>이 계산됩니다.
+      평점은 유난히 잘했거나 못한 선수만 적으면 됩니다. 통째로 비워두면 이 항목은 저장되지 않습니다.</p>
+    <div class="row" style="margin-top:14px">
+      <div><label>우리 포메이션</label><input id="formation" list="formations" placeholder="4-2-3-1"></div>
+      <div><label>경기 최우수 선수</label><select id="motmName"></select></div>
+      <div><label>MOTM 평점</label><input type="number" step="0.01" id="motmRating"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>메모</h2>
+    <textarea id="notes" placeholder="후반 라인 내려앉으면서 압박이 끊김"></textarea>
+  </section>
+
+  <section>
+    <h2>저장 전 확인</h2>
+    <div class="checks" id="checks"></div>
+    <pre id="preview"></pre>
+  </section>
+
+  <div class="bar">
+    <span class="fname" id="fname">—</span>
+    <span class="spacer"></span>
+    <button class="ghost" type="button" onclick="copyJson()">JSON 복사</button>
+    <button type="button" id="dl" onclick="download()">JSON 내려받기</button>
+  </div>
+</div>
+
+<script>
+/*VOCAB_START*/
+const VOCAB = { ourTeam: "웨스트햄 유나이티드", teams: ["노팅엄 포레스트", "뉴캐슬 유나이티드", "리버풀", "리즈 유나이티드", "맨체스터 시티", "맨체스터 유나이티드", "번리", "본머스", "브라이턴", "브렌트포드", "선덜랜드", "스포르팅 CP", "아스널", "아스톤 빌라", "에버턴", "울버햄프턴", "첼시", "크리스탈 팰리스", "토트넘 홋스퍼", "풀럼"], competitions: ["프리미어리그", "챔피언스 리그", "유로파 리그", "컨퍼런스 리그", "FA컵", "카라바오컵", "커뮤니티 실드", "친선경기"], players: ["재러드 보언", "크리센시오 서머빌", "발렌틴 카스테야노스", "마테우스 페르난데스", "토마시 소우체크", "숭궁투 마가사", "엘 하지 말리크 디우프", "맥스 킬먼", "장 클레르 토디보", "에런 완 비사카", "코스타스 졸라키스", "매스 헤어만센", "카일 워커 피터스", "파블루", "아다마 트라오레", "악셀 디사시", "프레디 포츠", "올리버 스칼스", "모하마두 캉테"] };
+/*VOCAB_END*/
+
+const $ = id => document.getElementById(id);
+const opt = (v, label) => `<option value="${v}">${label ?? v}</option>`;
+
+// ---- 통계 칸 정의 --------------------------------------------------------
+const STATS = [
+  ['xg', 'xG (기대 득점)', 'number', '0.01'],
+  ['shots', '슈팅', 'number', '1'],
+  ['shots_on_target', '유효 슈팅', 'number', '1'],
+  ['possession', '점유율 %', 'number', '1'],
+  ['corners', '코너킥', 'number', '1'],
+];
+
+function statFields(side) {
+  return `<div class="row">` + STATS.map(([k, label, type, step]) => `
+    <div>
+      <label>${label}</label>
+      <input type="${type}" step="${step}" id="${side}_${k}" data-side="${side}" data-key="${k}">
+      <label class="unc"><input type="checkbox" id="u_${side}_${k}"> 불확실</label>
+    </div>`).join('') + `</div>`;
+}
+
+// ---- 초기화 --------------------------------------------------------------
+function init() {
+  $('ourTeam').textContent = VOCAB.ourTeam;
+  $('usName').textContent = VOCAB.ourTeam;
+  $('competition').innerHTML = opt('', '— 선택 —') + VOCAB.competitions.map(c => opt(c)).join('');
+  $('opponent').innerHTML = opt('', '— 선택 —') + VOCAB.teams.map(t => opt(t)).join('');
+  $('motmName').innerHTML = opt('', '— 없음 —') + VOCAB.players.map(p => opt(p)).join('');
+  $('statsUs').innerHTML = statFields('us');
+  $('statsThem').innerHTML = statFields('them');
+
+  $('date').addEventListener('change', () => { autoSeason(); refresh(); });
+  $('us').addEventListener('input', () => { syncScorers(); refresh(); });
+  $('them').addEventListener('input', refresh);
+  $('opponent').addEventListener('change', () => { $('themName').textContent = $('opponent').value; refresh(); });
+  document.addEventListener('input', refresh);
+  document.addEventListener('change', refresh);
+
+  // 점유율 한쪽만 넣으면 반대쪽 자동 계산
+  $('us_possession').addEventListener('input', () => {
+    const v = parseFloat($('us_possession').value);
+    if (!isNaN(v) && !$('them_possession').value) $('them_possession').value = (100 - v).toFixed(0);
+  });
+
+  syncScorers(); refresh();
+}
+
+function autoSeason() {
+  const d = $('date').value;
+  if (!d) return;
+  const [y, m] = d.split('-').map(Number);
+  const start = m >= 7 ? y : y - 1;
+  $('season').value = `${start}/${String((start + 1) % 100).padStart(2, '0')}`;
+}
+
+// ---- 동적 행 -------------------------------------------------------------
+function playerSelect(cls) {
+  return `<select class="${cls}">${opt('', '— 선택 —')}${VOCAB.players.map(p => opt(p)).join('')}</select>`;
+}
+
+function syncScorers() {
+  const n = Math.max(0, parseInt($('us').value) || 0);
+  const box = $('scorers');
+  const rows = () => [...box.children].filter(c => !c.classList.contains('head'));
+  if (n > 0 && !box.querySelector('.head')) {
+    const h = document.createElement('div');
+    h.className = 'head goal';
+    h.innerHTML = `<span>분</span><span>득점</span><span>도움</span><span>직접 입력</span>`;
+    box.appendChild(h);
+  }
+  if (n === 0) box.innerHTML = '';
+  while (rows().length > n) box.lastChild.remove();
+  while (rows().length < n) {
+    const d = document.createElement('div');
+    d.className = 'item goal';
+    d.innerHTML = `<input type="number" class="min" placeholder="분" min="0" max="120">
+                   ${playerSelect('who')}
+                   ${playerSelect('assist')}
+                   <input class="free" placeholder="목록에 없으면">`;
+    box.appendChild(d);
+  }
+  $('scorerHint').textContent = n ? `${n}칸 · 도움은 선택` : '무득점';
+}
+
+function addLineup() {
+  const d = document.createElement('div');
+  d.className = 'item lineup';
+  d.innerHTML = `<input type="number" class="no" placeholder="번호">
+                 ${playerSelect('who')}
+                 <input class="role" placeholder="역할">
+                 <input type="number" step="0.1" class="rating" placeholder="평점">
+                 <button class="ghost" type="button" onclick="this.parentNode.remove(); refresh()">×</button>`;
+  $('lineup').appendChild(d);
+  refresh();
+}
+
+// ---- JSON 조립 -----------------------------------------------------------
+function numOf(id) {
+  const v = $(id).value;
+  return v === '' ? null : Number(v);
+}
+
+function buildJson() {
+  const o = {};
+  const uncertain = [];
+
+  if ($('date').value) o.date = $('date').value;
+  if ($('season').value) o.season = $('season').value;
+  if ($('competition').value) o.competition = $('competition').value;
+  if ($('opponent').value) o.opponent = $('opponent').value;
+  o.venue = $('venue').value;
+  if ($('stadium').value) o.stadium = $('stadium').value;
+  o.score = { us: numOf('us') ?? 0, them: numOf('them') ?? 0 };
+  if ($('formation').value) o.formation = $('formation').value.trim();
+  if ($('opponent_formation').value) o.opponent_formation = $('opponent_formation').value.trim();
+  if ($('motmName').value) o.motm = { name: $('motmName').value, rating: numOf('motmRating') };
+
+  const ts = {};
+  ['us', 'them'].forEach(side => {
+    const side_o = {};
+    STATS.forEach(([k]) => {
+      const v = numOf(`${side}_${k}`);
+      if (v !== null) side_o[k] = v;
+      if ($(`u_${side}_${k}`).checked) uncertain.push(`team_stats.${side}.${k}`);
+    });
+    if (Object.keys(side_o).length) ts[side] = side_o;
+  });
+  if (Object.keys(ts).length) o.team_stats = ts;
+
+  const scorers = [...$('scorers').querySelectorAll('.item')].map(d => {
+    const who = d.querySelector('.free').value.trim() || d.querySelector('.who').value;
+    if (!who) return null;
+    const g = { scorer: who };
+    const min = d.querySelector('.min').value;
+    const assist = d.querySelector('.assist').value;
+    if (min) g.minute = Number(min);
+    if (assist) g.assist = assist;
+    return g;
+  }).filter(Boolean);
+  if (scorers.length) o.scorers = scorers;
+
+  const players = [...$('lineup').querySelectorAll('.item')].map(d => {
+    const name = d.querySelector('.who').value;
+    if (!name) return null;
+    const p = { name };
+    const no = d.querySelector('.no').value, role = d.querySelector('.role').value.trim();
+    const rating = d.querySelector('.rating').value;
+    if (no) p.no = Number(no);
+    if (role) p.role = role;
+    if (rating) p.rating = Number(rating);
+    return p;
+  }).filter(Boolean);
+  if (players.length) o.players = players;
+
+  if ($('notes').value.trim()) o.notes = $('notes').value.trim();
+  o.uncertain = uncertain;
+  o.source_screenshots = [];
+  return o;
+}
+
+// ---- 검증 (build.ps1 과 같은 규칙) ---------------------------------------
+function validate(o) {
+  const out = [];
+  const need = [['date', '날짜'], ['season', '시즌'], ['competition', '대회'], ['opponent', '상대']];
+  need.forEach(([k, label]) => { if (!o[k]) out.push(['bad', `${label}을(를) 입력하세요`]); });
+  if (o.season && !/^\d{4}\/\d{2}$/.test(o.season)) out.push(['bad', `시즌 형식은 YYYY/YY 입니다 (지금: ${o.season})`]);
+
+  ['us', 'them'].forEach(side => {
+    const s = o.team_stats?.[side]; if (!s) return;
+    const label = side === 'us' ? '우리' : '상대';
+    if (s.shots != null && s.shots_on_target != null && s.shots_on_target > s.shots)
+      out.push(['bad', `${label} 유효슈팅 ${s.shots_on_target} 이 슈팅 ${s.shots} 보다 많습니다`]);
+    if (s.xg != null && s.xg < 0) out.push(['bad', `${label} xG 가 음수입니다`]);
+    if (s.possession != null && (s.possession < 0 || s.possession > 100))
+      out.push(['bad', `${label} 점유율이 0~100 밖입니다`]);
+  });
+  const pu = o.team_stats?.us?.possession, pt = o.team_stats?.them?.possession;
+  if (pu != null && pt != null && Math.abs(pu + pt - 100) > 1)
+    out.push(['bad', `점유율 합이 ${pu + pt}% 입니다 (100 이어야 합니다)`]);
+
+  const goals = o.score?.us ?? 0;
+  const sc = (o.scorers || []).length;
+  if (sc && sc !== goals) out.push(['warn', `득점 ${goals} / 득점자 ${sc}명 — 개수가 다릅니다`]);
+  if (!sc && goals > 0) out.push(['warn', `${goals}득점인데 득점자를 안 넣으셨습니다 (선택 항목이라 저장은 됩니다)`]);
+
+  if (o.uncertain?.length) out.push(['warn', `불확실 표시 ${o.uncertain.length}건: ${o.uncertain.join(', ')}`]);
+  return out;
+}
+
+function fileName(o) {
+  return (o.date && o.opponent) ? `${o.date}-vs-${o.opponent}.json` : null;
+}
+
+function refresh() {
+  const o = buildJson();
+  const checks = validate(o);
+  const blocking = checks.some(c => c[0] === 'bad');
+  $('preview').textContent = JSON.stringify(o, null, 2);
+  $('checks').innerHTML = checks.length
+    ? checks.map(([lv, msg]) => `<div class="${lv}">${lv === 'bad' ? '✕' : '⚠'} ${msg}</div>`).join('')
+    : '<div class="ok">✓ 저장 전 확인 통과. build.ps1 이 다시 한 번 검증합니다.</div>';
+  const fn = fileName(o);
+  $('fname').textContent = fn || '— 날짜와 상대를 넣으면 파일명이 생깁니다 —';
+  $('dl').disabled = !fn || blocking;
+}
+
+function download() {
+  const o = buildJson();
+  const blob = new Blob([JSON.stringify(o, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName(o);
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyJson() {
+  navigator.clipboard.writeText(JSON.stringify(buildJson(), null, 2));
+}
+
+init();
+</script>
+</body>
+</html>

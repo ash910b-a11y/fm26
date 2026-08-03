@@ -1,0 +1,41 @@
+[
+  {
+    "role": "SS",
+    "description": "Pushes forward from between the lines to act as a main goal threat.",
+    "key_attributes": ["Finishing", "Off the Ball", "Anticipation", "First Touch", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "AMC",
+    "description": "Finds space between the lines to create chances and act as a goal threat.",
+    "key_attributes": ["Long Shots", "Off the Ball", "Passing", "First Touch", "Technique", "Flair", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "AP",
+    "description": "Finds gaps between the lines to receive the ball, roaming to create passing options and deliver decisive passes in the final third.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "FR",
+    "description": "Roams freely from position, boldly creating and scoring goals as an unpredictable creative threat, often breaking team structure.",
+    "key_attributes": ["Dribbling", "Long Shots", "Off the Ball", "Passing", "Vision", "First Touch", "Technique", "Flair"],
+    "instructions": [
+      { "field": "player.dribble_frequency", "value": "more" },
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "CHM",
+    "description": "Breaks into channels and underlaps to link with wide attackers and provide dangerous crosses.",
+    "key_attributes": ["Crossing", "Off the Ball", "Passing", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  }
+]

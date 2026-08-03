@@ -1,0 +1,3576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전술 보드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=Noto+Sans+KR:wght@400;600;700;800&display=swap');
+
+:root {
+  --pitch-dark: #276749;
+  --pitch-light: #2f855a;
+  --line: rgba(255, 255, 255, 0.6);
+  --ink: #1e293b;
+  --paper: #f1f5f9;
+  --panel: #ffffff;
+  --accent: #2563eb;
+  --accent-deep: #1d4ed8;
+  --accent-hover: #eff6ff;
+  --slot-fill: #334155;
+  --slot-fill-active: #2563eb;
+  --text-soft: #64748b;
+  --border: #e2e8f0;
+  --danger: #e11d48;
+  font-family: 'Noto Sans KR', 'Chivo', sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+body { min-height: 100vh; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(340px, 1fr); gap: 0; min-height: 100vh; }
+@media (max-width: 980px) { .app { grid-template-columns: 1fr; } }
+
+.topbar {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 32px; background: #0f172a; color: #fff; border-bottom: 4px solid var(--accent);
+  flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10;
+}
+.brand { display: flex; align-items: baseline; gap: 12px; }
+.brand .mark { font-family: 'Chivo', sans-serif; font-weight: 900; font-size: 28px; letter-spacing: -0.5px; color: #60a5fa; }
+.brand .sub { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
+.reset-btn, .export-btn {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #f8fafc;
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all 0.2s;
+}
+.reset-btn { border-color: rgba(225, 29, 72, 0.5); color: #fda4af; }
+.reset-btn:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+.export-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.pitch-col { padding: 40px 24px; display: flex; flex-direction: column; align-items: center; gap: 24px; background: var(--paper); }
+.pitch-wrap { width: 100%; max-width: 640px; position: relative; aspect-ratio: 68/100; border-radius: 12px; box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2); }
+.pitch {
+  position: absolute; inset: 0; border-radius: 12px;
+  background: repeating-linear-gradient(to bottom, var(--pitch-light) 0, var(--pitch-light) 10%, var(--pitch-dark) 10%, var(--pitch-dark) 20%);
+  border: 4px solid #fff; overflow: hidden;
+}
+.pitch svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pitch-line { fill: none; stroke: var(--line); stroke-width: 0.5; }
+
+.slot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; z-index: 2; transition: transform 0.2s, left 0.4s ease-in-out, top 0.4s ease-in-out; text-decoration: none; }
+.slot * { text-decoration: none; }
+.grid-cell { position: absolute; transform: translate(-50%, -50%); width: 15%; height: 12%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 8px; background: rgba(0,0,0,0.08); }
+.grid-cell.hover { background: rgba(37, 99, 235, 0.5); border-color: #fff; }
+.slot.phase-def .dot { border-color: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.35); }
+.slot.phase-def .tag { background: rgba(120, 53, 15, 0.85); }
+.slot.phase-mix .dot { border-color: #a855f7; box-shadow: 0 0 8px rgba(168,85,247,0.35); }
+.slot.phase-mix .tag { background: rgba(88, 28, 135, 0.85); }
+.slot.phase-buildup .dot { border-color: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+.slot.phase-buildup .tag { background: rgba(20, 83, 45, 0.85); }
+.slot.phase-buildup { cursor: default; }
+.slot:hover { z-index: 10; }
+.slot .dot {
+  width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #475569, var(--slot-fill));
+  border: 2px solid #fff; display: flex; align-items: center; justify-content: center; color: #fff;
+  font-weight: 800; font-size: 14px; font-family: 'Chivo', sans-serif; box-shadow: 0 0 8px rgba(0,0,0,0.35); transition: all 0.2s ease;
+}
+.slot:hover .dot { transform: scale(1.1); box-shadow: 0 0 12px rgba(0,0,0,0.45); }
+.slot.filled .dot { background: linear-gradient(135deg, #0f172a, #1e293b); }
+.slot.active .dot { background: linear-gradient(135deg, #3b82f6, var(--accent)); border-color: #fff; transform: scale(1.1); box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.3); }
+.slot .tag { margin-top: 6px; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15, 23, 42, 0.85); padding: 3px 8px; border-radius: 4px; white-space: nowrap; backdrop-filter: blur(4px); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.slot .pname { margin-top: 4px; font-size: 11px; font-weight: 600; color: #f1f5f9; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.slot-fit { margin-top: 2px; font-size: 10px; letter-spacing: 1px; color: #fbbf24; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
+.pitch-caption { font-size: 14px; color: var(--text-soft); text-align: center; max-width: 520px; line-height: 1.6; background: #e2e8f0; padding: 10px 20px; border-radius: 20px; }
+.pitch-caption b { color: var(--ink); font-weight: 700; }
+
+.squad-strip { width: 100%; max-width: 640px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.squad-chip { font-size: 12px; font-weight: 600; background: var(--panel); border: 1px solid var(--border); border-radius: 24px; padding: 6px 12px 6px 6px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.15s; }
+.squad-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
+.squad-chip .pos-badge { background: var(--ink); color: #fff; font-weight: 800; font-size: 10px; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+.squad-chip.empty { color: #94a3b8; border: 1px dashed #cbd5e1; background: transparent; }
+.squad-chip.empty .pos-badge { background: #cbd5e1; }
+
+.side { background: var(--panel); border-left: 1px solid var(--border); padding: 0; overflow-y: auto; max-height: 100vh; box-shadow: -4px 0 15px rgba(0,0,0,0.03); }
+.side h2 { font-family: 'Chivo', sans-serif; font-size: 13px; letter-spacing: 1.5px; color: var(--accent); margin: 0 0 6px; }
+.side h3 { font-size: 22px; margin: 0 0 20px; font-weight: 800; color: var(--ink); }
+
+.top-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); background: #f8fafc; position: sticky; top: 0; z-index: 10; }
+.top-tab { flex: 1; padding: 16px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; background: none; color: var(--text-soft); font-family: inherit; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.top-tab:hover { color: var(--ink); background: #f1f5f9; }
+.top-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--panel); }
+
+#tab-slot, #tab-team { padding: 24px 28px 40px; }
+
+.empty-state { color: var(--text-soft); font-size: 15px; line-height: 1.6; padding: 60px 20px; background: var(--paper); border: 2px dashed #cbd5e1; border-radius: 12px; text-align: center; margin-top: 20px; font-weight: 600; }
+
+.role-desc { font-size: 13.5px; line-height: 1.6; color: #334155; background: var(--accent-hover); border-left: 4px solid var(--accent); padding: 14px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px; }
+.role-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.role-opt { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; }
+.role-opt:hover { border-color: var(--accent); box-shadow: 0 2px 6px rgba(37,99,235,0.1); }
+.role-opt.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+.role-opt.sel .role-name { color: #fff; }
+.role-opt .role-name { font-weight: 800; font-size: 15px; }
+.role-opt .role-mini { font-size: 12px; color: var(--text-soft); max-width: 200px; text-align: right; }
+.role-opt.sel .role-mini { color: #bfdbfe; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.chip { font-size: 12px; background: #f1f5f9; color: #475569; border-radius: 20px; padding: 5px 12px; font-weight: 600; border: 1px solid #e2e8f0; }
+
+.section-block { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.section-block:last-child { border-bottom: none; }
+.field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.field-row label { font-size: 13.5px; font-weight: 600; color: #334155; flex: 1; display:flex; align-items:center; }
+.field-row select, .field-row .bool-toggle { flex: 1.2; max-width: 55%; }
+select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--paper); font-size: 13px; font-family: inherit; color: var(--ink); font-weight: 600; cursor: pointer; transition: all 0.2s; outline: none; }
+select:hover { border-color: #94a3b8; }
+select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background:#fff; }
+select.is-default { color: var(--text-soft); font-weight: 400; }
+select.is-set { border-color: var(--accent); background: #fff; color: var(--accent-deep); }
+
+.bool-toggle { display: flex; gap: 4px; background: var(--paper); padding: 4px; border-radius: 8px; }
+.bool-toggle button { flex: 1; padding: 8px 4px; font-size: 13px; font-weight: 600; border: none; background: transparent; cursor: pointer; font-family: inherit; border-radius: 6px; color: var(--text-soft); transition: all 0.2s; }
+.bool-toggle button.on { background: #fff; color: var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+.default-badge { font-size: 10px; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 8px; }
+
+.player-select-wrap select { margin-bottom: 14px; }
+.player-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.player-card .pname-big { font-weight: 900; font-size: 18px; margin-bottom: 4px; color: var(--ink); }
+.player-card .pmeta { font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 16px; }
+.stat-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.stat-row .stat-label { font-size: 12px; font-weight: 600; width: 80px; color: #475569; flex-shrink: 0; }
+.stat-bar-track { flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.stat-bar-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, var(--accent)); border-radius: 4px; }
+.stat-num { font-size: 13px; font-weight: 800; width: 24px; text-align: right; color: var(--ink); }
+.trait-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px; }
+.trait-tag { font-size: 11px; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 20px; font-weight: 700; }
+
+.no-player-note { font-size: 13px; color: var(--text-soft); background: var(--paper); padding: 12px; border-radius: 8px; text-align: center; }
+
+.fit-block { background: #fff; border: 1px solid var(--accent); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.fit-stars { font-size: 20px; letter-spacing: 2px; color: #fbbf24; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.fit-meta { font-size: 12px; color: #334155; font-weight: 700; }
+.fit-count { font-weight: 400; color: var(--text-soft); font-size: 11px; margin-left: 4px; }
+.ppm-rec-chip { background: #f1f5f9; color: #475569; }
+.ppm-rec-chip.owned { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+.team-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.team-tab { font-size: 13px; padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); font-weight: 600; cursor: pointer; background: #fff; font-family: inherit; color: var(--text-soft); transition: all 0.2s; }
+.team-tab:hover { border-color: var(--accent); color: var(--ink); }
+.team-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+.mentality-row { margin-bottom: 32px; }
+.mentality-scale { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.mentality-scale button { flex: 1; padding: 12px 4px; font-size: 11px; font-weight: 600; text-align: center; border: none; border-right: 1px solid var(--border); background: #fff; cursor: pointer; font-family: inherit; color: #64748b; line-height: 1.4; transition: all 0.2s; }
+.mentality-scale button:last-child { border-right: none; }
+.mentality-scale button:hover { background: #f8fafc; color: var(--ink); }
+.mentality-scale button.active { background: var(--accent); color: #fff; font-weight: 800; border-color: var(--accent); }
+
+
+/* ---------- View mode & overlays ---------- */
+.view-mode-bar { display: flex; gap: 8px; background: #1e293b; padding: 6px; border-radius: 30px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+.view-btn { background: transparent; border: none; color: #94a3b8; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; font-family: inherit; }
+.view-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+.overlay-toggle-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+.overlay-btn { background: #fff; border: 1px solid var(--border); color: var(--text-soft); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+.overlay-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.overlay-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.heatmap-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+.heatmap-layer.active { opacity: 0.92; }
+.tactical-alert { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.9); color: #f1f5f9; font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 20px; z-index: 8; border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 10px; pointer-events: none; }
+
+.passmap-legend { display: none; flex-wrap: wrap; gap: 6px 14px; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid var(--border); border-radius: 12px; padding: 8px 16px; width: 100%; max-width: 640px; }
+.passmap-legend.active { display: flex; }
+.passmap-legend .legend-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.passmap-legend .legend-swatch { width: 18px; height: 0; border-top-width: 3px; border-top-style: solid; display: inline-block; }
+.passmap-legend .legend-note { color: var(--text-soft); font-weight: 600; }
+
+.hidden { display: none !important; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">TACTICA</span>
+      <span class="sub">전술 보드</span>
+    </div>
+    <button class="reset-btn" id="resetBtn">전체 초기화</button>
+    <button class="export-btn" id="westHamPresetBtn">웨스트햄 XI 적용</button>
+    <button class="export-btn" id="exportPromptBtn">수석코치 조언 구하기</button>
+    <button class="export-btn" id="saveLocalBtn">로컬 저장</button>
+    <button class="export-btn" id="loadLocalBtn">불러오기</button>
+    <button class="export-btn" id="downloadJsonBtn">전술 다운로드 (.json)</button>
+  </div>
+
+  <div class="pitch-col">
+    <div class="view-mode-bar" id="viewModeBar">
+      <button class="view-btn" data-mode="mix">혼합</button>
+      <button class="view-btn active" data-mode="atk">공 소유시</button>
+      <button class="view-btn" data-mode="def">공 미소유시</button>
+      <button class="view-btn" data-mode="buildup">공격 전개</button>
+    </div>
+    <div class="overlay-toggle-bar">
+      <button class="overlay-btn" id="togglePassBtn">🔗 패스맵</button>
+      <button class="overlay-btn" id="toggleHeatBtn">🔥 히트맵</button>
+    </div>
+    <div class="pitch-wrap">
+      <div class="pitch" id="pitch">
+        <svg viewBox="0 0 68 100" preserveAspectRatio="none">
+          <rect class="pitch-line" x="1" y="1" width="66" height="98"/>
+          <line class="pitch-line" x1="1" y1="50" x2="67" y2="50"/>
+          <circle class="pitch-line" cx="34" cy="50" r="8.5"/>
+          <circle class="pitch-line" cx="34" cy="50" r="0.5" fill="var(--line)"/>
+          <rect class="pitch-line" x="13.84" y="1" width="40.32" height="16.5"/>
+          <rect class="pitch-line" x="24.84" y="1" width="18.32" height="6"/>
+          <path class="pitch-line" d="M 24.84 17.5 A 8.5 8.5 0 0 0 43.16 17.5"/>
+          <rect class="pitch-line" x="13.84" y="82.5" width="40.32" height="16.5"/>
+          <rect class="pitch-line" x="24.84" y="93" width="18.32" height="6"/>
+          <path class="pitch-line" d="M 24.84 82.5 A 8.5 8.5 0 0 1 43.16 82.5"/>
+          <path class="pitch-line" d="M 1 4 A 3 3 0 0 0 4 1"/>
+          <path class="pitch-line" d="M 64 1 A 3 3 0 0 0 67 4"/>
+          <path class="pitch-line" d="M 1 96 A 3 3 0 0 1 4 99"/>
+          <path class="pitch-line" d="M 67 96 A 3 3 0 0 1 64 99"/>
+        </svg>
+      </div>
+      <div id="heatmapLayer" class="heatmap-layer"></div>
+      <svg id="overlaySvg" class="overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div class="tactical-alert" id="tacticalAlert" style="display:none;"></div>
+      <div id="slotsLayer"></div>
+    </div>
+    <div class="passmap-legend" id="passmapLegend">
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#34d399;"></span>후방 빌드업</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#d6a24e;"></span>전개·창조 구간</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#94a3b8; border-top-style:dashed;"></span>상황적 연결(오버랩·스위치)</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#60a5fa; border-top-style:dashed;"></span>주요 빌드업 패스 루트</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#3b82f6;"></span>연계 & 스루패스 루트</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#22c55e;"></span>오버랩·인사이드 시너지</span>
+      <span class="legend-item"><span class="legend-swatch" style="border-color:#e11d48; border-top-style:dashed;"></span>동선 충돌 경고</span>
+      <span class="legend-item legend-note">굵고 실선일수록 밀접 · 얇고 점선일수록 롤 차이로 거리가 생긴 연결 · GK 라인은 배급 대상 지침에 따라 굵기가 달라짐</span>
+    </div>
+    <div class="pitch-caption" id="pitchCaption">포지션 원을 클릭하면 오른쪽에서 <b>롤 · 개인 지침 · 선수 배정</b>을 편집할 수 있어요. 라인 위치는 <b>팀 지침(멘탈리티 · 수비 라인 · 압박 라인 · 폭)</b>에 따라 공 소유/미소유 시 자동으로 움직여요 — 직접 드래그하면 그 위치가 고정되고, 더블클릭하면 다시 자동 배치로 돌아갑니다.</div>
+    <div class="squad-strip" id="squadStrip"></div>
+  </div>
+
+  <div class="side">
+    <div class="top-tabs">
+      <button class="top-tab active" data-tab="slot">포지션 편집</button>
+      <button class="top-tab" data-tab="team">팀 지침</button>
+    </div>
+
+    <div id="tab-slot">
+      <div id="slotEditor"></div>
+    </div>
+
+    <div id="tab-team" class="hidden">
+      <div id="teamEditor"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/*GAMEDATA_START*/
+const GAME_DATA = {"CB": [
+  {
+    "role": "CB",
+    "description": "Protects the team, staying composed in possession-based systems to support build-up with simple passing to creative teammates.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "BCB",
+    "description": "Similar to the CB but attempts line-breaking and through passes from deep, pushing forward whenever possible in an attacking role.",
+    "key_attributes": ["Heading", "Marking", "Passing", "Tackling", "Anticipation", "Positioning", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false },
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  }
+], "DLR": [
+  {
+    "role": "FB",
+    "description": "Primarily defends but pushes forward to provide width and support attacks via overlaps, staying disciplined in his zone during defensive transitions.",
+    "key_attributes": ["Marking", "Tackling", "Anticipation", "Positioning", "Teamwork", "Acceleration", "Concentration"],
+    "instructions": []
+  },
+  {
+    "role": "WB",
+    "description": "Provides a passing option in build-up and gets further forward to maintain width and support the attack in the final third.",
+    "key_attributes": ["Crossing", "Marking", "Tackling", "Teamwork", "Work Rate", "Acceleration", "Stamina", "Pace"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "IWB",
+    "description": "Moves centrally during attacks to act as an extra defensive midfielder, staying disciplined in his zone to support possession.",
+    "key_attributes": ["Passing", "Tackling", "Anticipation", "Decisions", "Positioning", "Teamwork", "Acceleration", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "IFB",
+    "description": "Tucks inside to act as an extra central defender during attacks, strengthening the defense against counter-attacks.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Strength"],
+    "instructions": []
+  }
+], "DM": [
+  {
+    "role": "DM",
+    "description": "Screens the back line and links defense to attack, keeping possession with simple passing.",
+    "key_attributes": ["Tackling", "Anticipation", "Positioning", "Teamwork", "Concentration"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "DLP",
+    "description": "Dictates attacks from between defense and midfield with accurate passing, staying reliable defensively.",
+    "key_attributes": ["Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "BBM",
+    "description": "Supports build-up from deep, then bursts into the final third as a goal threat.",
+    "key_attributes": ["Off the Ball", "Passing", "Tackling", "Teamwork", "Work Rate", "Stamina"],
+    "instructions": []
+  },
+  {
+    "role": "HB",
+    "description": "Drops between the center-backs to form a back three, covering against counters.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Teamwork", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "BBP",
+    "description": "A deep-lying playmaker in build-up who advances into a creative role as the attack progresses.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Work Rate"],
+    "instructions": []
+  }
+], "MC": [
+  {
+    "role": "CM",
+    "description": "Links defense and attack, supporting both offensive and defensive phases.",
+    "key_attributes": ["Passing", "Tackling", "Decisions", "First Touch", "Teamwork"],
+    "instructions": []
+  },
+  {
+    "role": "WCM",
+    "description": "Operates on the flank of the midfield, linking play and using diagonal passes to escape pressure.",
+    "key_attributes": ["Passing", "Tackling", "Decisions", "First Touch", "Teamwork"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "wider" }
+    ]
+  },
+  {
+    "role": "MPM",
+    "description": "Receives passes from deep positions and advances into the attacking midfield line, roaming to create passing options as a creative threat.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "AMC",
+    "description": "Finds space between the lines to create chances and act as a goal threat.",
+    "key_attributes": ["Long Shots", "Off the Ball", "Passing", "First Touch", "Technique", "Flair", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "AP",
+    "description": "Finds gaps between the lines to receive the ball, roaming to create passing options and deliver decisive passes in the final third.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "CHM",
+    "description": "Breaks into channels and underlaps to link with wide attackers and provide dangerous crosses.",
+    "key_attributes": ["Crossing", "Off the Ball", "Passing", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  }
+], "AMC": [
+  {
+    "role": "SS",
+    "description": "Pushes forward from between the lines to act as a main goal threat.",
+    "key_attributes": ["Finishing", "Off the Ball", "Anticipation", "First Touch", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "AMC",
+    "description": "Finds space between the lines to create chances and act as a goal threat.",
+    "key_attributes": ["Long Shots", "Off the Ball", "Passing", "First Touch", "Technique", "Flair", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "AP",
+    "description": "Finds gaps between the lines to receive the ball, roaming to create passing options and deliver decisive passes in the final third.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "FR",
+    "description": "Roams freely from position, boldly creating and scoring goals as an unpredictable creative threat, often breaking team structure.",
+    "key_attributes": ["Dribbling", "Long Shots", "Off the Ball", "Passing", "Vision", "First Touch", "Technique", "Flair"],
+    "instructions": [
+      { "field": "player.dribble_frequency", "value": "more" },
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "CHM",
+    "description": "Breaks into channels and underlaps to link with wide attackers and provide dangerous crosses.",
+    "key_attributes": ["Crossing", "Off the Ball", "Passing", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  }
+], "AML_R": [
+  {
+    "role": "W",
+    "description": "Stays wide to stretch the defense, providing a creative threat through crosses and passes in the final third.",
+    "key_attributes": ["Crossing", "Dribbling", "Technique", "Teamwork", "Acceleration", "Pace", "Agility"],
+    "instructions": []
+  },
+  {
+    "role": "IF",
+    "description": "Cuts inside from the half-space to act as a direct goal threat and link up with wing-backs.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Anticipation", "First Touch", "Technique", "Acceleration", "Agility", "Composure"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" }
+    ]
+  },
+  {
+    "role": "WFD",
+    "description": "Starts wide and cuts inside to act as a direct goal threat.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Anticipation", "First Touch", "Technique", "Acceleration", "Pace", "Agility"],
+    "instructions": [
+      { "field": "player.forward_runs", "value": "more" },
+      { "field": "player.passing_length", "value": "short" }
+    ]
+  },
+  {
+    "role": "IW",
+    "description": "Cuts inside from the half-space to provide a creative threat and link up with wing-backs.",
+    "key_attributes": ["Dribbling", "First Touch", "Technique", "Teamwork", "Acceleration", "Agility", "Composure"],
+    "instructions": []
+  }
+], "ST": [
+  {
+    "role": "DLF",
+    "description": "Drops deep into space to link attack and midfield, receiving and distributing passes.",
+    "key_attributes": ["Finishing", "Off the Ball", "First Touch", "Technique", "Strength", "Composure"],
+    "instructions": [
+      { "field": "player.control_tempo", "value": true }
+    ]
+  },
+  {
+    "role": "CFD",
+    "description": "A complete No. 9 and primary goal threat who scores directly or creates opportunities.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "First Touch", "Technique", "Acceleration", "Strength", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "P",
+    "description": "An aggressive goal threat playing on the defender's shoulder to score from through balls.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "Anticipation", "Acceleration", "Composure", "Concentration"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "TF",
+    "description": "Plays on the last line as the main aerial target to link up play and build attacks.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "Strength", "Jumping Reach", "Balance", "Bravery", "Aggression"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "CHF",
+    "description": "A dynamic goal threat who moves into channels between defenders to shoot or lay off passes.",
+    "key_attributes": ["Dribbling", "Finishing", "Off the Ball", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  },
+  {
+    "role": "F9",
+    "description": "Drops deep into the AMC position to link up play, disrupt center-backs, and create space.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": true }
+    ]
+  }
+], "Player_Instructions": {
+  "player": {
+    "attacking_width": [
+      "wider",
+      "narrower",
+      "move_into_channels",
+      "default"
+    ],
+    "dribble_direction": [
+      "inside",
+      "outside",
+      "default"
+    ],
+    "dribble_frequency": [
+      "less",
+      "more",
+      "default"
+    ],
+    "forward_runs": [
+      "less",
+      "more",
+      "default"
+    ],
+    "roam_from_position": [
+      true,
+      false
+    ],
+    "control_tempo": [
+      true,
+      false
+    ],
+    "shooting": [
+      "more",
+      "less",
+      "default"
+    ],
+    "passing_risk": [
+      "risky",
+      "safe",
+      "default"
+    ],
+    "passing_length": [
+      "short",
+      "long",
+      "default"
+    ],
+    "cross_from": [
+      "deep",
+      "byline",
+      "default"
+    ],
+    "cross_aim": [
+      "far_post",
+      "center",
+      "near_post",
+      "target_forward",
+      "default"
+    ]
+  }
+}, "Team_instructions": {
+  "mentality": [
+    "very_defensive",
+    "defensive",
+    "cautious",
+    "balanced",
+    "positive",
+    "attacking",
+    "very_attacking"
+  ],
+  "team": {
+    "in_possession": {
+      "passing": [
+        "very_short",
+        "short",
+        "standard",
+        "long",
+        "very_long"
+      ],
+      "tempo": [
+        "much_lower",
+        "lower",
+        "standard",
+        "higher",
+        "much_higher"
+      ],
+      "width": [
+        "very_narrow",
+        "narrow",
+        "standard",
+        "wide",
+        "very_wide"
+      ],
+      "transition": [
+        "hold_shape",
+        "standard",
+        "counter"
+      ],
+      "creativity": [
+        "disciplined",
+        "balanced",
+        "expressive"
+      ]
+    },
+    "progression": {
+      "dribbling": [
+        "less",
+        "standard",
+        "more"
+      ],
+      "overlap": [
+        "left_overlap",
+        "right_overlap",
+        "both_overlap",
+        "left_underlap",
+        "right_underlap",
+        "both_underlap",
+        "off"
+      ],
+      "focus_play": [
+        "left",
+        "center",
+        "right",
+        "both_flanks",
+        "mixed"
+      ],
+      "passing_style": [
+        "to_feet",
+        "standard",
+        "into_space"
+      ]
+    },
+    "final_third": {
+      "chance_creation": [
+        "work_ball_into_box",
+        "standard",
+        "shoot_on_sight"
+      ],
+      "long_shots": [
+        "less",
+        "standard",
+        "more"
+      ],
+      "cross_style": [
+        "mixed",
+        "floated",
+        "low",
+        "whipped"
+      ]
+    },
+    "build_up": {
+      "build_up_style": [
+        "play_out_of_defence",
+        "standard",
+        "clear_it"
+      ],
+      "goal_kicks": [
+        "short",
+        "mixed",
+        "long"
+      ],
+      "distribution_speed": [
+        "quick",
+        "standard",
+        "slow"
+      ],
+      "distribution_target": [
+        "center_backs",
+        "full_backs",
+        "playmaker",
+        "flanks",
+        "behind_defence",
+        "mixed"
+      ]
+    },
+    "out_of_possession": {
+      "pressing_line": [
+        "low_block",
+        "mid_block",
+        "high_block"
+      ],
+      "defensive_line": [
+        "much_lower",
+        "lower",
+        "standard",
+        "higher",
+        "much_higher"
+      ],
+      "line_behavior": [
+        "drop_off",
+        "standard",
+        "step_up"
+      ],
+      "pressing_intensity": [
+        "much_less",
+        "less",
+        "standard",
+        "more",
+        "much_more"
+      ],
+      "defensive_transition": [
+        "regroup",
+        "standard",
+        "counter_press"
+      ],
+      "tackling": [
+        "ease_off",
+        "standard",
+        "hard"
+      ],
+      "press_trap": [
+        "outside",
+        "standard",
+        "inside"
+      ],
+      "prevent_short_gk_distribution": [
+        true,
+        false
+      ],
+      "stop_crosses": [
+        "stop",
+        "standard",
+        "allow"
+      ]
+    }
+  }
+}, "PPM": {
+    "traits": [
+        "왼쪽 측면 돌파 선호",
+        "오른쪽 측면 돌파 선호",
+        "경기장 중앙으로 드리블함",
+        "페널티 박스 안으로 침투 선호",
+        "수비수와 풀백 사이로 침투",
+        "가능할 때마다 최전방으로 침투 선호",
+        "짧고 간단한 패스 선호",
+        "스루패스를 자주 시도",
+        "중거리 슛 선호",
+        "강력한 슛 선호",
+        "정확한 슛 선호",
+        "휘어차는 슛 선호",
+        "골키퍼를 제치는 것을 선호",
+        "오프사이드 트랩 돌파를 선호",
+        "심판과 언쟁하는 것을 선호",
+        "골키퍼를 넘기는 로빙 슛 선호",
+        "스루패스 하지 않는 것을 선호",
+        "공을 오래 소유하는 것을 선호",
+        "필요 시 상대 페널티 박스에 한 박자 늦게 침투하는 것을 선호",
+        "위기 상황을 벗어나기 위해 개인기를 자주 시도",
+        "항상 후방에 있는 것을 선호",
+        "슬라이딩 태클 선호",
+        "슬라이딩 태클을 하지 않는 것을 선호",
+        "프리킥 시 강력한 슛 선호",
+        "공을 자주 드리블",
+        "공을 드물게 드리블",
+        "먼 거리에서 프리킥 시 슛을 자주 시도",
+        "양쪽 측면에서 중앙으로 침투",
+        "공을 받기 위해 포지션보다 내려옴",
+        "터치라인을 따라 움직이는 것을 선호",
+        "득점보다는 패스하는 것을 선호",
+        "상대 선수를 엄격하게 마크",
+        "골문을 등지는 것을 선호",
+        "빠르고 낮게 깔리는 스로인 구사",
+        "공을 가지면 잠시 멈추는 플레이 선호",
+        "빠른 박자에 슛을 자주 시도",
+        "2대1 패스 선호",
+        "템포 조절을 선호",
+        "오버헤드킥을 시도",
+        "공을 차놓고 상대를 제치는 것을 선호",
+        "약한 발을 사용하지 않는 것을 선호",
+        "긴 패스를 자주 시도",
+        "공을 넓은 지역으로 보내는 것을 선호",
+        "역습을 시작할 때 장거리 스로인 사용",
+        "중거리 슛 자제",
+        "페널티 지역 선수",
+        "왼쪽 측면에서 중앙으로 침투",
+        "오른쪽 측면에서 중앙으로 침투",
+        "얼리 크로스",
+        "수비 진영에서 드리블하기",
+        "패스를 발밑으로 받는 것을 선호",
+        "아웃프론트킥 선호",
+        "상대 선수를 거칠게 대하는 것을 선호",
+        "공을 몰기 전 오른발에 공을 가지려고 시도",
+        "공을 몰기 전 왼발에 공을 가지려고 시도",
+        "현란한 개인기를 자주 시도",
+        "관중들을 열광시키는 행동 선호",
+        "상대를 여러 차례 속이는 것을 선호",
+        "발로 공을 다룸"
+    ]
+}, "attributes": {
+    "updated":  "2026-08-04",
+    "source_file":  "squad/선수_능력치_기록표.csv",
+    "note":  "감독이 직접 입력한 CSV. 빈 칸은 기록 없음으로 처리한다.",
+    "players":  {
+                    "재러드 보언":  {
+                                   "포지션":  [
+                                               "ST",
+                                               "AML",
+                                               "AMR"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "6칸",
+                                             "오른발":  "3칸"
+                                         },
+                                   "특성":  [
+                                              "정확한 슛 선호",
+                                              "공을 자주 드리블",
+                                              "오른쪽 측면에서 중앙으로 침투"
+                                          ],
+                                   "기술":  {
+                                              "개인기":  15,
+                                              "골결":  15,
+                                              "드리블":  14,
+                                              "일대일":  5,
+                                              "중거리":  15,
+                                              "크로스":  13,
+                                              "태클":  8,
+                                              "패스":  14,
+                                              "퍼스트터치":  14,
+                                              "헤더":  10
+                                          },
+                                   "정신":  {
+                                              "대담":  8,
+                                              "리더십":  13,
+                                              "수비위치":  8,
+                                              "승부욕":  17,
+                                              "시야":  13,
+                                              "예측":  15,
+                                              "오프더볼":  15,
+                                              "적극":  10,
+                                              "집중":  11,
+                                              "천재":  15,
+                                              "침착":  15,
+                                              "팀워크":  15,
+                                              "판단":  15,
+                                              "활동량":  17
+                                          },
+                                   "신체":  {
+                                              "가속":  15,
+                                              "균형":  13,
+                                              "몸싸움":  8,
+                                              "민첩":  15,
+                                              "점프":  8,
+                                              "주력":  14,
+                                              "지구력":  15,
+                                              "체력":  14
+                                          }
+                               },
+                    "크리센시오 서머빌":  {
+                                      "포지션":  [
+                                                  "AML",
+                                                  "AMR"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "4칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "휘어차는 슛 선호",
+                                                 "2대1패스 선호",
+                                                 "공을 자주 드리블",
+                                                 "왼쪽 측면에서 중앙으로 침투"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  15,
+                                                 "골결":  11,
+                                                 "드리블":  17,
+                                                 "일대일":  4,
+                                                 "중거리":  14,
+                                                 "크로스":  11,
+                                                 "태클":  5,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  15,
+                                                 "헤더":  5
+                                             },
+                                      "정신":  {
+                                                 "대담":  9,
+                                                 "리더십":  5,
+                                                 "수비위치":  4,
+                                                 "승부욕":  13,
+                                                 "시야":  11,
+                                                 "예측":  13,
+                                                 "오프더볼":  13,
+                                                 "적극":  7,
+                                                 "집중":  8,
+                                                 "천재":  15,
+                                                 "침착":  13,
+                                                 "팀워크":  10,
+                                                 "판단":  10,
+                                                 "활동량":  12
+                                             },
+                                      "신체":  {
+                                                 "가속":  18,
+                                                 "균형":  15,
+                                                 "몸싸움":  5,
+                                                 "민첩":  17,
+                                                 "점프":  5,
+                                                 "주력":  17,
+                                                 "지구력":  13,
+                                                 "체력":  12
+                                             }
+                                  },
+                    "발렌틴 카스테야노스":  {
+                                       "포지션":  [
+                                                   "ST"
+                                               ],
+                                       "발":  {
+                                                 "왼발":  "3칸",
+                                                 "오른발":  "6칸"
+                                             },
+                                       "특성":  [
+                                                  "오버헤드킥을 시도"
+                                              ],
+                                       "기술":  {
+                                                  "개인기":  15,
+                                                  "골결":  14,
+                                                  "드리블":  12,
+                                                  "일대일":  4,
+                                                  "중거리":  12,
+                                                  "크로스":  10,
+                                                  "태클":  7,
+                                                  "패스":  13,
+                                                  "퍼스트터치":  14,
+                                                  "헤더":  18
+                                              },
+                                       "정신":  {
+                                                  "대담":  15,
+                                                  "리더십":  10,
+                                                  "수비위치":  8,
+                                                  "승부욕":  18,
+                                                  "시야":  13,
+                                                  "예측":  16,
+                                                  "오프더볼":  15,
+                                                  "적극":  17,
+                                                  "집중":  12,
+                                                  "천재":  14,
+                                                  "침착":  12,
+                                                  "팀워크":  17,
+                                                  "판단":  13,
+                                                  "활동량":  15
+                                              },
+                                       "신체":  {
+                                                  "가속":  14,
+                                                  "균형":  16,
+                                                  "몸싸움":  13,
+                                                  "민첩":  5,
+                                                  "점프":  13,
+                                                  "주력":  13,
+                                                  "지구력":  13,
+                                                  "체력":  15
+                                              }
+                                   },
+                    "마테우스 페르난데스":  {
+                                       "포지션":  [
+                                                   "AMC",
+                                                   "MC"
+                                               ],
+                                       "발":  {
+                                                 "왼발":  "3칸",
+                                                 "오른발":  "6칸"
+                                             },
+                                       "특성":  [
+
+                                              ],
+                                       "기술":  {
+                                                  "개인기":  16,
+                                                  "골결":  10,
+                                                  "드리블":  14,
+                                                  "일대일":  10,
+                                                  "중거리":  10,
+                                                  "크로스":  11,
+                                                  "태클":  14,
+                                                  "패스":  15,
+                                                  "퍼스트터치":  15,
+                                                  "헤더":  9
+                                              },
+                                       "정신":  {
+                                                  "대담":  11,
+                                                  "리더십":  11,
+                                                  "수비위치":  11,
+                                                  "승부욕":  15,
+                                                  "시야":  14,
+                                                  "예측":  14,
+                                                  "오프더볼":  13,
+                                                  "적극":  14,
+                                                  "집중":  16,
+                                                  "천재":  14,
+                                                  "침착":  15,
+                                                  "팀워크":  16,
+                                                  "판단":  14,
+                                                  "활동량":  16
+                                              },
+                                       "신체":  {
+                                                  "가속":  12,
+                                                  "균형":  14,
+                                                  "몸싸움":  12,
+                                                  "민첩":  13,
+                                                  "점프":  8,
+                                                  "주력":  12,
+                                                  "지구력":  14,
+                                                  "체력":  15
+                                              }
+                                   },
+                    "토마시 소우체크":  {
+                                     "포지션":  [
+                                                 "MC",
+                                                 "DM"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "3칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "가능할 때마다 최전방으로 침투 선호",
+                                                "짧고 간단한 패스 선호",
+                                                "필요 시 상대 페널티 박스에 한 박자 늦게 침투하는 것을 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  10,
+                                                "골결":  14,
+                                                "드리블":  10,
+                                                "일대일":  14,
+                                                "중거리":  12,
+                                                "크로스":  8,
+                                                "태클":  15,
+                                                "패스":  9,
+                                                "퍼스트터치":  9,
+                                                "헤더":  18
+                                            },
+                                     "정신":  {
+                                                "대담":  17,
+                                                "리더십":  13,
+                                                "수비위치":  15,
+                                                "승부욕":  16,
+                                                "시야":  9,
+                                                "예측":  14,
+                                                "오프더볼":  14,
+                                                "적극":  15,
+                                                "집중":  15,
+                                                "천재":  5,
+                                                "침착":  15,
+                                                "팀워크":  17,
+                                                "판단":  15,
+                                                "활동량":  18
+                                            },
+                                     "신체":  {
+                                                "가속":  11,
+                                                "균형":  15,
+                                                "몸싸움":  16,
+                                                "민첩":  9,
+                                                "점프":  17,
+                                                "주력":  11,
+                                                "지구력":  18,
+                                                "체력":  18
+                                            }
+                                 },
+                    "숭궁투 마가사":  {
+                                    "포지션":  [
+                                                "MC",
+                                                "DM",
+                                                "DC"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "3칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  11,
+                                               "골결":  7,
+                                               "드리블":  10,
+                                               "일대일":  14,
+                                               "중거리":  11,
+                                               "크로스":  11,
+                                               "태클":  14,
+                                               "패스":  13,
+                                               "퍼스트터치":  12,
+                                               "헤더":  14
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  10,
+                                               "수비위치":  13,
+                                               "승부욕":  13,
+                                               "시야":  12,
+                                               "예측":  13,
+                                               "오프더볼":  12,
+                                               "적극":  14,
+                                               "집중":  12,
+                                               "천재":  10,
+                                               "침착":  12,
+                                               "팀워크":  14,
+                                               "판단":  12,
+                                               "활동량":  13
+                                           },
+                                    "신체":  {
+                                               "가속":  12,
+                                               "균형":  13,
+                                               "몸싸움":  14,
+                                               "민첩":  13,
+                                               "점프":  14,
+                                               "주력":  12,
+                                               "지구력":  15,
+                                               "체력":  13
+                                           }
+                                },
+                    "엘 하지 말리크 디우프":  {
+                                         "포지션":  [
+                                                     "DL"
+                                                 ],
+                                         "발":  {
+                                                   "왼발":  "6칸",
+                                                   "오른발":  "2칸"
+                                               },
+                                         "특성":  [
+                                                    "약한 발을 사용하지 않는 것을 선호",
+                                                    "슬라이딩 태클 선호"
+                                                ],
+                                         "기술":  {
+                                                    "개인기":  13,
+                                                    "골결":  11,
+                                                    "드리블":  13,
+                                                    "일대일":  13,
+                                                    "중거리":  9,
+                                                    "크로스":  16,
+                                                    "태클":  14,
+                                                    "패스":  13,
+                                                    "퍼스트터치":  13,
+                                                    "헤더":  12
+                                                },
+                                         "정신":  {
+                                                    "대담":  15,
+                                                    "리더십":  5,
+                                                    "수비위치":  11,
+                                                    "승부욕":  14,
+                                                    "시야":  12,
+                                                    "예측":  13,
+                                                    "오프더볼":  11,
+                                                    "적극":  16,
+                                                    "집중":  11,
+                                                    "천재":  13,
+                                                    "침착":  11,
+                                                    "팀워크":  13,
+                                                    "판단":  11,
+                                                    "활동량":  14
+                                                },
+                                         "신체":  {
+                                                    "가속":  16,
+                                                    "균형":  13,
+                                                    "몸싸움":  13,
+                                                    "민첩":  13,
+                                                    "점프":  12,
+                                                    "주력":  15,
+                                                    "지구력":  14,
+                                                    "체력":  17
+                                                }
+                                     },
+                    "맥스 킬먼":  {
+                                  "포지션":  [
+                                              "DC"
+                                          ],
+                                  "발":  {
+                                            "왼발":  "6칸",
+                                            "오른발":  "4칸"
+                                        },
+                                  "특성":  [
+                                             "수비 진영에서 드리블하기"
+                                         ],
+                                  "기술":  {
+                                             "개인기":  14,
+                                             "골결":  6,
+                                             "드리블":  13,
+                                             "일대일":  14,
+                                             "중거리":  7,
+                                             "크로스":  11,
+                                             "태클":  14,
+                                             "패스":  14,
+                                             "퍼스트터치":  13,
+                                             "헤더":  12
+                                         },
+                                  "정신":  {
+                                             "대담":  9,
+                                             "리더십":  6,
+                                             "수비위치":  14,
+                                             "승부욕":  15,
+                                             "시야":  13,
+                                             "예측":  13,
+                                             "오프더볼":  11,
+                                             "적극":  7,
+                                             "집중":  12,
+                                             "천재":  11,
+                                             "침착":  13,
+                                             "팀워크":  12,
+                                             "판단":  12,
+                                             "활동량":  12
+                                         },
+                                  "신체":  {
+                                             "가속":  13,
+                                             "균형":  13,
+                                             "몸싸움":  14,
+                                             "민첩":  13,
+                                             "점프":  15,
+                                             "주력":  14,
+                                             "지구력":  13,
+                                             "체력":  11
+                                         }
+                              },
+                    "장 클레르 토디보":  {
+                                      "포지션":  [
+                                                  "DC"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "3칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "위기 상황을 벗어나기 위해 개인기를 자주 시도",
+                                                 "슬라이딩 태클을 하지 않는 것을 선호",
+                                                 "수비 진영에서 드리블하기"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  13,
+                                                 "골결":  8,
+                                                 "드리블":  12,
+                                                 "일대일":  15,
+                                                 "중거리":  8,
+                                                 "크로스":  5,
+                                                 "태클":  15,
+                                                 "패스":  14,
+                                                 "퍼스트터치":  13,
+                                                 "헤더":  14
+                                             },
+                                      "정신":  {
+                                                 "대담":  14,
+                                                 "리더십":  11,
+                                                 "수비위치":  14,
+                                                 "승부욕":  15,
+                                                 "시야":  12,
+                                                 "예측":  15,
+                                                 "오프더볼":  7,
+                                                 "적극":  14,
+                                                 "집중":  14,
+                                                 "천재":  11,
+                                                 "침착":  14,
+                                                 "팀워크":  14,
+                                                 "판단":  11,
+                                                 "활동량":  12
+                                             },
+                                      "신체":  {
+                                                 "가속":  14,
+                                                 "균형":  13,
+                                                 "몸싸움":  16,
+                                                 "민첩":  12,
+                                                 "점프":  15,
+                                                 "주력":  15,
+                                                 "지구력":  14,
+                                                 "체력":  17
+                                             }
+                                  },
+                    "에런 완 비사카":  {
+                                     "포지션":  [
+                                                 "DR"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "2칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "슬라이딩 태클 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  11,
+                                                "골결":  7,
+                                                "드리블":  13,
+                                                "일대일":  12,
+                                                "중거리":  5,
+                                                "크로스":  11,
+                                                "태클":  19,
+                                                "패스":  11,
+                                                "퍼스트터치":  12,
+                                                "헤더":  8
+                                            },
+                                     "정신":  {
+                                                "대담":  17,
+                                                "리더십":  6,
+                                                "수비위치":  13,
+                                                "승부욕":  10,
+                                                "시야":  6,
+                                                "예측":  12,
+                                                "오프더볼":  12,
+                                                "적극":  15,
+                                                "집중":  12,
+                                                "천재":  12,
+                                                "침착":  12,
+                                                "팀워크":  16,
+                                                "판단":  12,
+                                                "활동량":  13
+                                            },
+                                     "신체":  {
+                                                "가속":  16,
+                                                "균형":  15,
+                                                "몸싸움":  13,
+                                                "민첩":  18,
+                                                "점프":  10,
+                                                "주력":  15,
+                                                "지구력":  15,
+                                                "체력":  15
+                                            }
+                                 },
+                    "코스타스 졸라키스":  {
+                                      "포지션":  [
+                                                  "GK"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "2칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  10,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  8
+                                             },
+                                      "정신":  {
+                                                 "대담":  14,
+                                                 "리더십":  10,
+                                                 "수비위치":  14,
+                                                 "승부욕":  15,
+                                                 "시야":  11,
+                                                 "예측":  14,
+                                                 "오프더볼":  3,
+                                                 "적극":  9,
+                                                 "집중":  11,
+                                                 "천재":  6,
+                                                 "침착":  12,
+                                                 "팀워크":  14,
+                                                 "판단":  13,
+                                                 "활동량":  10
+                                             },
+                                      "신체":  {
+                                                 "가속":  10,
+                                                 "균형":  8,
+                                                 "몸싸움":  12,
+                                                 "민첩":  15,
+                                                 "점프":  15,
+                                                 "주력":  13,
+                                                 "지구력":  12,
+                                                 "체력":  15
+                                             },
+                                      "골키퍼":  true
+                                  },
+                    "매스 헤어만센":  {
+                                    "포지션":  [
+                                                "GK"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "3칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  13,
+                                               "패스":  12,
+                                               "퍼스트터치":  12
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  11,
+                                               "수비위치":  13,
+                                               "승부욕":  12,
+                                               "시야":  12,
+                                               "예측":  13,
+                                               "오프더볼":  3,
+                                               "적극":  12,
+                                               "집중":  13,
+                                               "천재":  11,
+                                               "침착":  14,
+                                               "팀워크":  15,
+                                               "판단":  12,
+                                               "활동량":  12
+                                           },
+                                    "신체":  {
+                                               "가속":  12,
+                                               "균형":  12,
+                                               "몸싸움":  12,
+                                               "민첩":  14,
+                                               "점프":  14,
+                                               "주력":  11,
+                                               "지구력":  12,
+                                               "체력":  11
+                                           },
+                                    "골키퍼":  true
+                                },
+                    "카일 워커 피터스":  {
+                                      "포지션":  [
+                                                  "DL",
+                                                  "DR"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "4칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "오른쪽 측면 돌파 선호",
+                                                 "가능할 때마다 최전방으로 침투 선호"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  13,
+                                                 "골결":  10,
+                                                 "드리블":  15,
+                                                 "일대일":  11,
+                                                 "중거리":  8,
+                                                 "크로스":  13,
+                                                 "태클":  14,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  14,
+                                                 "헤더":  8
+                                             },
+                                      "정신":  {
+                                                 "대담":  12,
+                                                 "리더십":  8,
+                                                 "수비위치":  13,
+                                                 "승부욕":  14,
+                                                 "시야":  12,
+                                                 "예측":  12,
+                                                 "오프더볼":  14,
+                                                 "적극":  12,
+                                                 "집중":  11,
+                                                 "천재":  11,
+                                                 "침착":  13,
+                                                 "팀워크":  15,
+                                                 "판단":  12,
+                                                 "활동량":  15
+                                             },
+                                      "신체":  {
+                                                 "가속":  14,
+                                                 "균형":  14,
+                                                 "몸싸움":  10,
+                                                 "민첩":  13,
+                                                 "점프":  6,
+                                                 "주력":  14,
+                                                 "지구력":  16,
+                                                 "체력":  18
+                                             }
+                                  },
+                    "파블루":  {
+                                "포지션":  [
+                                            "ST"
+                                        ],
+                                "발":  {
+                                          "왼발":  "3칸",
+                                          "오른발":  "6칸"
+                                      },
+                                "특성":  [
+                                           "패스를 발밑으로 받는 것을 선호"
+                                       ],
+                                "기술":  {
+                                           "개인기":  12,
+                                           "골결":  14,
+                                           "드리블":  12,
+                                           "일대일":  9,
+                                           "중거리":  12,
+                                           "크로스":  8,
+                                           "태클":  13,
+                                           "패스":  11,
+                                           "퍼스트터치":  12,
+                                           "헤더":  13
+                                       },
+                                "정신":  {
+                                           "대담":  16,
+                                           "리더십":  11,
+                                           "수비위치":  10,
+                                           "승부욕":  18,
+                                           "시야":  10,
+                                           "예측":  15,
+                                           "오프더볼":  12,
+                                           "적극":  19,
+                                           "집중":  12,
+                                           "천재":  12,
+                                           "침착":  15,
+                                           "팀워크":  14,
+                                           "판단":  13,
+                                           "활동량":  17
+                                       },
+                                "신체":  {
+                                           "가속":  12,
+                                           "균형":  16,
+                                           "몸싸움":  14,
+                                           "민첩":  12,
+                                           "점프":  13,
+                                           "주력":  13,
+                                           "지구력":  14,
+                                           "체력":  16
+                                       }
+                            },
+                    "아다마 트라오레":  {
+                                     "포지션":  [
+                                                 "AR"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "3칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "오른쪽 측면 돌파 선호",
+                                                "공을 차놓고 상대를 제치는 것을 선호",
+                                                "현란한 개인기를 자주 시도",
+                                                "패스를 발밑으로 받는 것을 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  12,
+                                                "골결":  11,
+                                                "드리블":  18,
+                                                "일대일":  7,
+                                                "중거리":  11,
+                                                "크로스":  12,
+                                                "태클":  7,
+                                                "패스":  11,
+                                                "퍼스트터치":  10,
+                                                "헤더":  10
+                                            },
+                                     "정신":  {
+                                                "대담":  11,
+                                                "리더십":  5,
+                                                "수비위치":  10,
+                                                "승부욕":  14,
+                                                "시야":  8,
+                                                "예측":  9,
+                                                "오프더볼":  9,
+                                                "적극":  12,
+                                                "집중":  8,
+                                                "천재":  18,
+                                                "침착":  10,
+                                                "팀워크":  9,
+                                                "판단":  6,
+                                                "활동량":  9
+                                            },
+                                     "신체":  {
+                                                "가속":  19,
+                                                "균형":  14,
+                                                "몸싸움":  17,
+                                                "민첩":  14,
+                                                "점프":  14,
+                                                "주력":  19,
+                                                "지구력":  10,
+                                                "체력":  12
+                                            }
+                                 },
+                    "악셀 디사시":  {
+                                   "포지션":  [
+                                               "DC",
+                                               "DR"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "3칸",
+                                             "오른발":  "6칸"
+                                         },
+                                   "특성":  [
+
+                                          ],
+                                   "기술":  {
+                                              "개인기":  12,
+                                              "골결":  6,
+                                              "드리블":  8,
+                                              "일대일":  14,
+                                              "중거리":  8,
+                                              "크로스":  6,
+                                              "태클":  15,
+                                              "패스":  12,
+                                              "퍼스트터치":  12,
+                                              "헤더":  16
+                                          },
+                                   "정신":  {
+                                              "대담":  5,
+                                              "리더십":  13,
+                                              "수비위치":  13,
+                                              "승부욕":  14,
+                                              "시야":  11,
+                                              "예측":  14,
+                                              "오프더볼":  11,
+                                              "적극":  13,
+                                              "집중":  13,
+                                              "천재":  6,
+                                              "침착":  13,
+                                              "팀워크":  13,
+                                              "판단":  13,
+                                              "활동량":  14
+                                          },
+                                   "신체":  {
+                                              "가속":  14,
+                                              "균형":  17,
+                                              "몸싸움":  18,
+                                              "민첩":  12,
+                                              "점프":  16,
+                                              "주력":  15,
+                                              "지구력":  16,
+                                              "체력":  15
+                                          }
+                               },
+                    "프레디 포츠":  {
+                                   "포지션":  [
+                                               "MC",
+                                               "DM"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "3칸",
+                                             "오른발":  "6칸"
+                                         },
+                                   "특성":  [
+
+                                          ],
+                                   "기술":  {
+                                              "개인기":  13,
+                                              "골결":  8,
+                                              "드리블":  7,
+                                              "일대일":  13,
+                                              "중거리":  8,
+                                              "크로스":  6,
+                                              "태클":  14,
+                                              "패스":  14,
+                                              "퍼스트터치":  12,
+                                              "헤더":  12
+                                          },
+                                   "정신":  {
+                                              "대담":  10,
+                                              "리더십":  9,
+                                              "수비위치":  14,
+                                              "승부욕":  15,
+                                              "시야":  11,
+                                              "예측":  13,
+                                              "오프더볼":  11,
+                                              "적극":  12,
+                                              "집중":  14,
+                                              "천재":  6,
+                                              "침착":  13,
+                                              "팀워크":  13,
+                                              "판단":  13,
+                                              "활동량":  15
+                                          },
+                                   "신체":  {
+                                              "가속":  11,
+                                              "균형":  12,
+                                              "몸싸움":  13,
+                                              "민첩":  12,
+                                              "점프":  13,
+                                              "주력":  13,
+                                              "지구력":  16,
+                                              "체력":  16
+                                          }
+                               },
+                    "올리버 스칼스":  {
+                                    "포지션":  [
+                                                "DM",
+                                                "DL"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "6칸",
+                                              "오른발":  "3칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  13,
+                                               "골결":  11,
+                                               "드리블":  12,
+                                               "일대일":  13,
+                                               "중거리":  7,
+                                               "크로스":  12,
+                                               "태클":  13,
+                                               "패스":  13,
+                                               "퍼스트터치":  11,
+                                               "헤더":  6
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  2,
+                                               "수비위치":  13,
+                                               "승부욕":  13,
+                                               "시야":  12,
+                                               "예측":  12,
+                                               "오프더볼":  12,
+                                               "적극":  10,
+                                               "집중":  11,
+                                               "천재":  8,
+                                               "침착":  13,
+                                               "팀워크":  13,
+                                               "판단":  13,
+                                               "활동량":  13
+                                           },
+                                    "신체":  {
+                                               "가속":  13,
+                                               "균형":  13,
+                                               "몸싸움":  10,
+                                               "민첩":  13,
+                                               "점프":  13,
+                                               "주력":  13,
+                                               "지구력":  14,
+                                               "체력":  13
+                                           }
+                                },
+                    "모하마두 캉테":  {
+                                    "포지션":  [
+                                                "AMC",
+                                                "MC"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "2칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  12,
+                                               "골결":  12,
+                                               "드리블":  12,
+                                               "일대일":  13,
+                                               "중거리":  12,
+                                               "크로스":  7,
+                                               "태클":  8,
+                                               "패스":  13,
+                                               "퍼스트터치":  12,
+                                               "헤더":  8
+                                           },
+                                    "정신":  {
+                                               "대담":  6,
+                                               "리더십":  12,
+                                               "수비위치":  12,
+                                               "승부욕":  15,
+                                               "시야":  13,
+                                               "예측":  12,
+                                               "오프더볼":  13,
+                                               "적극":  14,
+                                               "집중":  12,
+                                               "천재":  5,
+                                               "침착":  9,
+                                               "팀워크":  12,
+                                               "판단":  12,
+                                               "활동량":  15
+                                           },
+                                    "신체":  {
+                                               "가속":  13,
+                                               "균형":  13,
+                                               "몸싸움":  13,
+                                               "민첩":  12,
+                                               "점프":  9,
+                                               "주력":  13,
+                                               "지구력":  13,
+                                               "체력":  15
+                                           }
+                                },
+                    "콘스탄티노스 마브로파노스":  {
+                                          "포지션":  [
+                                                      "CB",
+                                                      "RB"
+                                                  ],
+                                          "발":  {
+                                                    "왼발":  "3칸",
+                                                    "오른발":  "6칸"
+                                                },
+                                          "특성":  [
+                                                     "긴 패스를 자주 시도",
+                                                     "수비 진영에서 드리블하기"
+                                                 ],
+                                          "기술":  {
+                                                     "개인기":  12,
+                                                     "골결":  7,
+                                                     "드리블":  12,
+                                                     "일대일":  13,
+                                                     "중거리":  11,
+                                                     "크로스":  8,
+                                                     "태클":  15,
+                                                     "패스":  13,
+                                                     "퍼스트터치":  11,
+                                                     "헤더":  15
+                                                 },
+                                          "정신":  {
+                                                     "대담":  14,
+                                                     "리더십":  12,
+                                                     "수비위치":  12,
+                                                     "승부욕":  18,
+                                                     "시야":  12,
+                                                     "예측":  13,
+                                                     "오프더볼":  10,
+                                                     "적극":  10,
+                                                     "집중":  10,
+                                                     "천재":  12,
+                                                     "침착":  12,
+                                                     "팀워크":  12,
+                                                     "판단":  10,
+                                                     "활동량":  17
+                                                 },
+                                          "신체":  {
+                                                     "가속":  13,
+                                                     "균형":  15,
+                                                     "몸싸움":  16,
+                                                     "민첩":  11,
+                                                     "점프":  16,
+                                                     "주력":  15,
+                                                     "지구력":  12,
+                                                     "체력":  13
+                                                 }
+                                      }
+                }
+}, "foot_scale": {
+  "_comment": "FM 선수 화면의 발 칸수(1~6)를 능력치 범위(1~20)로 옮기는 기준. 감독이 관측해 확정한 모델이며 게임이 직접 준 숫자가 아니다. 칸수는 구간이므로 단일 값이 아니라 범위로만 말한다.",
+  "source": "감독 관측",
+  "unit": "칸",
+  "bands": [
+    { "칸": 1, "label": "Very Weak",     "min": 1,  "max": 5 },
+    { "칸": 2, "label": "Weak",          "min": 6,  "max": 8 },
+    { "칸": 3, "label": "Reasonable",    "min": 9,  "max": 11 },
+    { "칸": 4, "label": "Fairly Strong", "min": 12, "max": 14 },
+    { "칸": 5, "label": "Strong",        "min": 15, "max": 17 },
+    { "칸": 6, "label": "Very Strong",   "min": 18, "max": 20, "note": "주발" }
+  ]
+}};
+/*GAMEDATA_END*/
+/*EVIDENCE_START*/
+const EVIDENCE = "- 1경기 1승 0무 0패 · 득실 4:1 · 경기당 xG 3.86 대 1.38\n- 표본이 적으면 추세로 읽지 말 것 (현재 1경기)";
+/*EVIDENCE_END*/
+
+</script>
+<script>
+/* ============================================================
+   TACTICA — 전술 보드
+   ============================================================ */
+
+// ---------- Data shortcuts ----------
+const ROLE_FILES = {
+  CB: GAME_DATA.CB,
+  DLR: GAME_DATA.DLR,
+  DM: GAME_DATA.DM,
+  MC: GAME_DATA.MC,
+  AMC: GAME_DATA.AMC,
+  AML_R: GAME_DATA.AML_R,
+  ST: GAME_DATA.ST
+};
+
+// Out-of-possession specific roles (공 미소유시 전용) — role name + defensive duty only.
+const OOP_ROLE_FILES = {
+  ST: [
+    { role: "CFD", defensive_duty: "Balanced defensive contribution." },
+    { role: "TCF", defensive_duty: "Actively tracks back to defend." },
+    { role: "OCF", defensive_duty: "Stays forward for counter-attacks, minimizing defensive duties." }
+  ],
+  AML_R: [
+    { role: "W", defensive_duty: "Balanced defensive contribution." },
+    { role: "TW", defensive_duty: "Actively tracks back to defend." },
+    { role: "IOW", defensive_duty: "Stays in the half-space for counter-attacks, minimizing defensive duties." }
+  ],
+  DM: [
+    { role: "DM", defensive_duty: "Balanced defensive contribution." },
+    { role: "PDM", defensive_duty: "Presses opponents aggressively." },
+    { role: "SDM", defensive_duty: "Holds position to protect the designated zone." },
+    { role: "WDM", defensive_duty: "Drifts wide to cover the flanks." }
+  ],
+  DLR: [
+    { role: "FB", defensive_duty: "Balanced defensive contribution." },
+    { role: "PFB", defensive_duty: "Presses opponents aggressively." },
+    { role: "HFB", defensive_duty: "Holds position to protect the designated zone." }
+  ],
+  CB: [
+    { role: "CB", defensive_duty: "Balanced defensive contribution." },
+    { role: "CCB", defensive_duty: "Drops deep to cover the space behind the defensive line." },
+    { role: "SCB", defensive_duty: "Steps up to press early and intercept the ball." }
+  ],
+  AMC: [
+    { role: "AMC", defensive_duty: "Balanced defensive contribution — holds the central shape between the lines." },
+    { role: "PAM", defensive_duty: "Presses opponents aggressively from an advanced position." },
+    { role: "SS", defensive_duty: "Pushes all the way up alongside the striker, forming an auxiliary front line out of possession." }
+  ]
+};
+const PLAYER_INSTR_SCHEMA = GAME_DATA.Player_Instructions.player;
+const TEAM_SCHEMA = GAME_DATA.Team_instructions;
+const PPM_TRAITS = GAME_DATA.PPM.traits;
+const ROSTER = GAME_DATA.attributes.players;
+
+// Korean field labels for player instructions
+const PI_LABELS = {
+  attacking_width: "공격 폭",
+  dribble_direction: "드리블 방향",
+  dribble_frequency: "드리블 빈도",
+  forward_runs: "전방 침투",
+  roam_from_position: "포지션 이탈(자유로움)",
+  control_tempo: "템포 조절",
+  shooting: "슈팅 빈도",
+  passing_risk: "패스 위험도",
+  passing_length: "패스 길이",
+  cross_from: "크로스 위치",
+  cross_aim: "크로스 조준"
+};
+const PI_VALUE_LABELS = {
+  wider: "넓게", narrower: "좁게", move_into_channels: "채널로 이동", default: "기본값",
+  inside: "안쪽으로", outside: "바깥쪽으로",
+  less: "적게", more: "많이",
+  true: "예", false: "아니오",
+  risky: "위험한", safe: "안전한",
+  short: "짧게", long: "길게",
+  deep: "깊은 지점", byline: "엔드라인",
+  far_post: "파 포스트", center: "중앙", near_post: "니어 포스트", target_forward: "타겟 공격수"
+};
+
+function piValueLabel(v){
+  return PI_VALUE_LABELS[String(v)] ?? String(v);
+}
+
+// Korean labels for team instruction categories/fields
+const TEAM_CATEGORY_LABELS = {
+  in_possession: "공 소유 시",
+  progression: "전진 빌드업",
+  final_third: "파이널 서드",
+  build_up: "빌드업",
+  out_of_possession: "비소유 시"
+};
+const TEAM_FIELD_LABELS = {
+  passing: "패싱", tempo: "템포", width: "너비", transition: "전환", creativity: "창의성",
+  dribbling: "드리블링", overlap: "오버랩/언더랩", focus_play: "공격 집중 방향", passing_style: "패스 스타일",
+  chance_creation: "찬스 메이킹", long_shots: "중거리 슛", cross_style: "크로스 스타일",
+  build_up_style: "빌드업 스타일", goal_kicks: "골킥", distribution_speed: "배급 속도", distribution_target: "배급 대상",
+  pressing_line: "압박 라인", defensive_line: "수비 라인", line_behavior: "라인 움직임", pressing_intensity: "압박 강도",
+  defensive_transition: "수비 전환", tackling: "태클 강도", press_trap: "압박 트랩", prevent_short_gk_distribution: "GK 짧은 배급 차단",
+  stop_crosses: "크로스 차단"
+};
+const TEAM_VALUE_LABELS = {
+  very_defensive:"매우 수비적", defensive:"수비적", cautious:"신중", balanced:"밸런스", positive:"적극적", attacking:"공격적", very_attacking:"매우 공격적",
+  very_short:"매우 짧게", short:"짧게", standard:"표준", long:"길게", very_long:"매우 길게",
+  much_lower:"훨씬 낮게", lower:"낮게", higher:"높게", much_higher:"훨씬 높게",
+  very_narrow:"매우 좁게", narrow:"좁게", wide:"넓게", very_wide:"매우 넓게",
+  hold_shape:"대형 유지", counter:"역습",
+  disciplined:"절제됨", expressive:"자유로움",
+  less:"적게", more:"많이",
+  left_overlap:"왼쪽 오버랩", right_overlap:"오른쪽 오버랩", both_overlap:"양쪽 오버랩",
+  left_underlap:"왼쪽 언더랩", right_underlap:"오른쪽 언더랩", both_underlap:"양쪽 언더랩", off:"사용 안 함",
+  left:"왼쪽", center:"중앙", right:"오른쪽", both_flanks:"양쪽 측면", mixed:"혼합",
+  to_feet:"발밑으로", into_space:"공간으로",
+  work_ball_into_box:"박스로 침투 후 마무리", shoot_on_sight:"기회 시 즉시 슈팅",
+  floated:"띄운 크로스", low:"낮은 크로스", whipped:"휘어진 크로스",
+  play_out_of_defence:"뒤에서부터 빌드업", clear_it:"걷어내기",
+  quick:"빠르게", slow:"느리게",
+  center_backs:"센터백", full_backs:"풀백", playmaker:"플레이메이커", flanks:"측면", behind_defence:"수비 뒷공간",
+  low_block:"낮은 블록", mid_block:"중간 블록", high_block:"높은 블록",
+  drop_off:"물러서기", step_up:"끌어올리기",
+  much_less:"훨씬 적게", much_more:"훨씬 많이",
+  regroup:"정비", counter_press:"즉시 역압박",
+  ease_off:"약하게", hard:"강하게",
+  outside:"바깥쪽으로 유도", inside:"안쪽으로 유도",
+  true:"차단", false:"허용", stop:"차단", allow:"허용"
+};
+function teamValueLabel(v){ return TEAM_VALUE_LABELS[String(v)] ?? String(v); }
+
+// English key_attribute -> Korean stat key (best-effort FM-community mapping)
+const ATTR_EN_TO_KR = {
+  "Technique": "개인기",
+  "Finishing": "골결",
+  "Dribbling": "드리블",
+  "Marking": "일대일",
+  "Long Shots": "중거리",
+  "Crossing": "크로스",
+  "Tackling": "태클",
+  "Passing": "패스",
+  "First Touch": "퍼스트터치",
+  "Heading": "헤더",
+  "Bravery": "대담",
+  "Leadership": "리더십",
+  "Positioning": "수비위치",
+  "Determination": "승부욕",
+  "Vision": "시야",
+  "Anticipation": "예측",
+  "Off the Ball": "오프더볼",
+  "Aggression": "적극",
+  "Concentration": "집중",
+  "Flair": "천재",
+  "Composure": "침착",
+  "Teamwork": "팀워크",
+  "Decisions": "판단",
+  "Work Rate": "활동량",
+  "Acceleration": "가속",
+  "Balance": "균형",
+  "Strength": "몸싸움",
+  "Agility": "민첩",
+  "Jumping Reach": "점프",
+  "Pace": "주력",
+  "Stamina": "지구력"
+};
+function findStatValue(player, krLabel){
+  for(const cat of ["기술","정신","신체"]){
+    if(player[cat] && krLabel in player[cat]) return player[cat][krLabel];
+  }
+  return null;
+}
+
+// ---------- Role fit scoring (1~5 stars) ----------
+// Averages the player's stats across the role's key_attributes (scale 1~20)
+// and maps that average onto a 0~5 star scale.
+function computeRoleFit(player, role){
+  if(!role) return null;
+  let sum = 0, count = 0;
+  role.key_attributes.forEach(attr => {
+    const kr = ATTR_EN_TO_KR[attr];
+    const val = kr ? findStatValue(player, kr) : null;
+    if(val !== null && val !== undefined){ sum += val; count++; }
+  });
+  if(count === 0) return null;
+  const avg = sum / count;
+  const stars = Math.max(0, Math.min(5, (avg/20)*5));
+  return { avg, stars, count, total: role.key_attributes.length };
+}
+
+function starString(stars){
+  const rounded = Math.round(stars);
+  return "★".repeat(rounded) + "☆".repeat(5 - rounded);
+}
+
+// ---------- Position group / role-file mapping ----------
+// code -> {group key in ROLE_FILES, roster position code(s), display}
+const POSITION_META = {
+  GK:  { group: null,   rosterCodes: ["GK"] },
+  DL:  { group: "DLR",  rosterCodes: ["DL"] },
+  DR:  { group: "DLR",  rosterCodes: ["DR"] },
+  DC:  { group: "CB",   rosterCodes: ["DC"] },
+  DM:  { group: "DM",   rosterCodes: ["DM"] },
+  ML:  { group: "MC",   rosterCodes: ["MC","AML"] },
+  MR:  { group: "MC",   rosterCodes: ["MC","AMR"] },
+  MC:  { group: "MC",   rosterCodes: ["MC"] },
+  AMC: { group: "AMC",  rosterCodes: ["AMC"] },
+  AML: { group: "AML_R",rosterCodes: ["AML"] },
+  AMR: { group: "AML_R",rosterCodes: ["AMR"] },
+  ST:  { group: "ST",   rosterCodes: ["ST"] }
+};
+
+// ---------- PPM recommendations (per role) ----------
+// Preferred Moves (PPM) are learned by individual players, not assigned by the
+// tactic — so this is a curated "fits this role well" reference list, not an
+// editable instruction. Keyed by role name (shared across position files).
+const ROLE_PPM_RECOMMENDATIONS = {
+  CB:  ["상대 선수를 엄격하게 마크", "짧고 간단한 패스 선호", "공을 드물게 드리블"],
+  BCB: ["스루패스를 자주 시도", "긴 패스를 자주 시도", "수비 진영에서 드리블하기"],
+  FB:  ["터치라인을 따라 움직이는 것을 선호", "짧고 간단한 패스 선호", "상대 선수를 엄격하게 마크"],
+  WB:  ["터치라인을 따라 움직이는 것을 선호", "얼리 크로스", "공을 자주 드리블"],
+  IWB: ["짧고 간단한 패스 선호", "패스를 발밑으로 받는 것을 선호", "템포 조절을 선호"],
+  IFB: ["상대 선수를 엄격하게 마크", "항상 후방에 있는 것을 선호", "슬라이딩 태클을 하지 않는 것을 선호"],
+  DM:  ["짧고 간단한 패스 선호", "항상 후방에 있는 것을 선호", "상대 선수를 엄격하게 마크"],
+  DLP: ["긴 패스를 자주 시도", "공을 넓은 지역으로 보내는 것을 선호", "템포 조절을 선호"],
+  BBM: ["가능할 때마다 최전방으로 침투 선호", "페널티 박스 안으로 침투 선호", "중거리 슛 선호"],
+  HB:  ["항상 후방에 있는 것을 선호", "짧고 간단한 패스 선호", "상대 선수를 엄격하게 마크"],
+  BBP: ["스루패스를 자주 시도", "템포 조절을 선호", "긴 패스를 자주 시도"],
+  CM:  ["짧고 간단한 패스 선호", "2대1 패스 선호", "패스를 발밑으로 받는 것을 선호"],
+  WCM: ["공을 넓은 지역으로 보내는 것을 선호", "터치라인을 따라 움직이는 것을 선호", "스루패스를 자주 시도"],
+  MPM: ["스루패스를 자주 시도", "공을 받기 위해 포지션보다 내려옴", "2대1 패스 선호"],
+  AMC: ["중거리 슛 선호", "스루패스를 자주 시도", "휘어차는 슛 선호"],
+  AP:  ["스루패스를 자주 시도", "공을 받기 위해 포지션보다 내려옴", "2대1 패스 선호"],
+  CHM: ["수비수와 풀백 사이로 침투", "얼리 크로스", "가능할 때마다 최전방으로 침투 선호"],
+  SS:  ["페널티 박스 안으로 침투 선호", "수비수와 풀백 사이로 침투", "빠른 박자에 슛을 자주 시도"],
+  FR:  ["현란한 개인기를 자주 시도", "중거리 슛 선호", "경기장 중앙으로 드리블함"],
+  W:   ["터치라인을 따라 움직이는 것을 선호", "얼리 크로스", "공을 자주 드리블"],
+  IF:  ["양쪽 측면에서 중앙으로 침투", "페널티 박스 안으로 침투 선호", "중거리 슛 선호"],
+  WFD: ["양쪽 측면에서 중앙으로 침투", "페널티 박스 안으로 침투 선호", "빠른 박자에 슛을 자주 시도"],
+  IW:  ["양쪽 측면에서 중앙으로 침투", "스루패스를 자주 시도", "2대1 패스 선호"],
+  DLF: ["패스를 발밑으로 받는 것을 선호", "공을 받기 위해 포지션보다 내려옴", "골문을 등지는 것을 선호"],
+  CFD: ["페널티 박스 안으로 침투 선호", "정확한 슛 선호", "골키퍼를 제치는 것을 선호"],
+  P:   ["수비수와 풀백 사이로 침투", "오프사이드 트랩 돌파를 선호", "골키퍼를 넘기는 로빙 슛 선호"],
+  TF:  ["골문을 등지는 것을 선호", "페널티 지역 선수", "상대 선수를 거칠게 대하는 것을 선호"],
+  CHF: ["수비수와 풀백 사이로 침투", "현란한 개인기를 자주 시도", "빠른 박자에 슛을 자주 시도"],
+  F9:  ["공을 받기 위해 포지션보다 내려옴", "짧고 간단한 패스 선호", "스루패스를 자주 시도"]
+};
+
+// ---------- Free-placement grid ----------
+// 11 fixed tokens (GK + 10 outfield). Each has a position "code" that decides
+// which role list applies (POSITION_META). Physical location is now a grid
+// cell, editable per phase (atk/def) by dragging.
+const CANONICAL_SLOTS = [
+  {id:"gk",  code:"GK"},
+  {id:"dl",  code:"DL"},
+  {id:"dcl", code:"DC"},
+  {id:"dcr", code:"DC"},
+  {id:"dr",  code:"DR"},
+  {id:"dml", code:"DM"},
+  {id:"dmr", code:"DM"},
+  {id:"aml", code:"AML"},
+  {id:"amc", code:"AMC"},
+  {id:"amr", code:"AMR"},
+  {id:"st",  code:"ST"}
+];
+
+// 전통 등번호 — 표시 전용. 드래그로 위치가 바뀌어도 "ST"처럼 실제와 다른 코드가
+// 뜨는 문제를 피하려고, 화면엔 코드 대신 이 번호를 쓴다. 역할군 판단(POSITION_META)은
+// 여전히 slot.code 기준이라 롤 선택지는 안 바뀐다.
+const SLOT_NUMBER = {
+  gk: "1", dr: "2", dcr: "3", dcl: "4", dl: "5",
+  dmr: "6", aml: "7", dml: "8", st: "9", amc: "10", amr: "11"
+};
+function slotNumber(slotId){ return SLOT_NUMBER[slotId] || "?"; }
+
+// 6개 라인(선) × 라인별 칸 수 — 총 24칸. GK 1 / 2~5선 5×4 / ST 3.
+const GRID_ROWS = [8, 24, 40, 56, 74, 92]; // row 0=ST 라인 ... row 5=GK 라인
+const ROW_COLS = [
+  [30, 50, 70],             // row0: ST 라인 — 3칸
+  [10, 36.7, 50, 63.3, 90], // row1: 2선 — 5칸 (중앙 2인조는 4등분 간격)
+  [10, 36.7, 50, 63.3, 90], // row2: 3선 — 5칸
+  [10, 36.7, 50, 63.3, 90], // row3: 4선 — 5칸
+  [10, 36.7, 50, 63.3, 90], // row4: 5선 — 5칸
+  [50]                      // row5: GK 라인 — 1칸
+];
+
+function cellToXY(col, row){
+  return { x: ROW_COLS[row][col], y: GRID_ROWS[row] };
+}
+
+// ---------- FM26-style auto shape (line height + width) ----------
+// 팀 지침(멘탈리티 / 수비 라인 / 압박 라인 / 압박 강도 / 공격 폭)에 따라
+// 라인 전체가 자동으로 위아래(라인 높이) · 좌우(너비)로 움직인다.
+// 공 소유(atk)일 때는 멘탈리티가, 비소유(def)일 때는 수비 라인·압박 라인이 주 요인이며,
+// 라인마다 반응 폭이 다르게(최전방/최후방일수록 크게) 가중치를 둔다.
+const MENTALITY_LINE_SHIFT = { very_defensive: 5, defensive: 3, cautious: 1.5, balanced: 0, positive: -1.5, attacking: -3, very_attacking: -5 };
+const DEFENSIVE_LINE_SHIFT = { much_lower: 6, lower: 3, standard: 0, higher: -3, much_higher: -6 };
+const PRESSING_LINE_SHIFT = { low_block: 3, mid_block: 0, high_block: -3 };
+const WIDTH_PULL = { very_narrow: 8, narrow: 4, standard: 0, wide: -2.5, very_wide: -5 };
+const PRESS_INTENSITY_PULL = { much_less: 5, less: 2.5, standard: 0, more: -1.5, much_more: -3 };
+// row 0=ST ... row 4=수비라인, row 5=GK(항상 고정)
+const ROW_WEIGHT_ATK = [1.0, 0.9, 0.6, 0.5, 0.3, 0];
+const ROW_WEIGHT_DEF = [0.3, 0.5, 0.7, 0.8, 1.0, 0];
+
+function atkLineShiftY(row){
+  const base = MENTALITY_LINE_SHIFT[state.teamMentality] ?? 0;
+  return base * (ROW_WEIGHT_ATK[row] ?? 0);
+}
+function defLineShiftY(row){
+  const dl = state.teamInstr["out_of_possession.defensive_line"] || "standard";
+  const pl = state.teamInstr["out_of_possession.pressing_line"] || "mid_block";
+  const base = ((DEFENSIVE_LINE_SHIFT[dl] ?? 0) + (PRESSING_LINE_SHIFT[pl] ?? 0)) / 2;
+  return base * (ROW_WEIGHT_DEF[row] ?? 0);
+}
+// 라인 높이(수직) 자동 이동량. phase별로 다른 요인이 적용되어 공 소유/미소유 형태가 서로 달라진다.
+function autoLineShiftY(phase, row){
+  if(phase === "atk") return atkLineShiftY(row);
+  if(phase === "def") return defLineShiftY(row);
+  return (atkLineShiftY(row) + defLineShiftY(row)) / 2; // mix: 두 상태의 절충 형태
+}
+function widthPullMagnitude(phase){
+  if(phase === "atk"){
+    const w = state.teamInstr["in_possession.width"] || "standard";
+    return WIDTH_PULL[w] ?? 0;
+  }
+  if(phase === "def"){
+    const pi = state.teamInstr["out_of_possession.pressing_intensity"] || "standard";
+    return PRESS_INTENSITY_PULL[pi] ?? 0;
+  }
+  return (widthPullMagnitude("atk") + widthPullMagnitude("def")) / 2;
+}
+// 너비(수평) 자동 이동량 — 터치라인 쪽(맨 왼/오른쪽 칸)에 있는 포지션에만 적용.
+function autoWidthShiftX(phase, col, maxCol){
+  if(maxCol <= 0 || (col !== 0 && col !== maxCol)) return 0;
+  const pull = widthPullMagnitude(phase); // 양수 = 안쪽으로 당김
+  return col === 0 ? pull : -pull;
+}
+function clampPct(v){ return Math.min(95, Math.max(5, v)); }
+
+// "공격 전개" — 공 소유시/미소유시 토글과는 별개인 별도 뷰.
+// 팀 지침 계산은 타지 않지만, 각 슬롯에 실제로 배정된 "롤"에 따라 높낮이가 달라진다.
+// 예: 같은 8번(dml) 자리라도 DLP면 DM보다 살짝 더 전진, 같은 5번(dl) 자리도 WB면 FB보다 훨씬 전진.
+const BUILDUP_BASE = {
+  gk:  { x: 50, y: 90 },
+  dl:  { x: 8,  y: 40 },
+  dr:  { x: 92, y: 40 },
+  dcl: { x: 36.7, y: 68 },
+  dcr: { x: 63.3, y: 68 },
+  dml: { x: 36.7, y: 40 },
+  dmr: { x: 63.3, y: 40 },
+  aml: { x: 15, y: 22 },
+  amr: { x: 85, y: 22 },
+  amc: { x: 50, y: 20 },
+  st:  { x: 50, y: 10 }
+};
+
+// 롤 코드(= ROLE_FILES의 role 값)별 기준 높이(y) 보정치. 음수 = 더 전진(위로), 양수 = 더 후퇴(아래로).
+const ROLE_Y_OFFSET = {
+  // DLR(dl/dr): 풀백류
+  FB: 8, WB: -7, IWB: 1, IFB: 10,
+  // CB(dcl/dcr): 센터백류
+  CB: 0, BCB: -5,
+  // DM(dml/dmr): 수비형 미드필더류
+  DM: 3, DLP: 1, BBM: -6, HB: 8, BBP: -3,
+  // AMC(amc): 공격형 미드필더류
+  SS: -5, AP: 1, FR: -2,
+  // AML_R(aml/amr): 측면 공격수류
+  W: 0, IF: -2, WFD: -1, IW: 1,
+  // ST(st): 최전방 공격수류. 포처처럼 최전방에 붙박이인 롤은 10번보다 확실히 위로,
+  // 처지는 롤(DLF/F9)은 아래로 — 서로 자연스럽게 갈리도록 오프셋만으로 조절한다(강제 보정 없음).
+  DLF: 16, CFD: -2, P: -8, TF: -4, CHF: -4, F9: 20,
+  // AMC/CHM 공용(양쪽 그룹에 다 존재)
+  CHM: -3, AMC: 0
+};
+
+// 좌우 폭 보정(dx). 양수 = 중앙으로 좁혀 들어감, 음수 = 터치라인 쪽으로 더 벌어짐.
+// W/WFD는 폭을 유지하는 롤이라 터치라인에 바짝 붙도록 음수(또는 0에 가깝게) 유지.
+const ROLE_X_TUCK = { IWB: 7, IFB: 10, IF: 6, WFD: 0, IW: 8, W: -4 };
+
+function buildupCoordsForSlot(slot){
+  const base = BUILDUP_BASE[slot.id];
+  if(!base) return { x: 50, y: 50 };
+  if(slot.id === "gk") return base;
+  const st = slotState(slot.id);
+  const roleKey = st.roleKey;
+  const dy = (roleKey && ROLE_Y_OFFSET[roleKey] !== undefined) ? ROLE_Y_OFFSET[roleKey] : 0;
+  let y = base.y + dy;
+  let x = base.x;
+  const tuck = roleKey ? ROLE_X_TUCK[roleKey] : undefined;
+  if(tuck !== undefined){
+    x = (base.x < 50) ? base.x + tuck : base.x - tuck;
+  }
+  // 9번이 P/CFD/TF/CHF처럼 최전방에 붙박이인 롤이면, 10번이 SS(공격수에 준하는 전진형 롤)가
+  // 아닌 이상 9번이 10번보다 확실히 더 앞(작은 y)에 서야 한다.
+  if(slot.id === "st" && roleKey && ["P","CFD","TF","CHF"].includes(roleKey)){
+    const amcSlot = findSlot("amc");
+    const amcRoleKey = slotState("amc").roleKey;
+    if(amcSlot && amcRoleKey !== "SS"){
+      const amcY = buildupCoordsForSlot(amcSlot).y;
+      y = Math.min(y, amcY - 6);
+    }
+  }
+  return { x: clampPct(x), y: clampPct(y) };
+}
+
+// 슬롯의 실제 표시 좌표. 사용자가 드래그로 직접 옮긴 슬롯은 그 위치를 그대로 존중하고
+// (자동 계산을 적용하지 않음), 그렇지 않은 슬롯은 팀 지침에 따라 자동으로 위치가 보정된다.
+function getDisplayCoordsForPhase(slot, phase){
+  if(phase === "buildup"){
+    return buildupCoordsForSlot(slot);
+  }
+  const layout = state.layouts[phase] || state.layouts.atk;
+  const cell = layout[slot.id] || defaultLayout()[slot.id];
+  const coords = cellToXY(cell.col, cell.row);
+  const isManual = !!(state.manualLayouts[phase] && state.manualLayouts[phase][slot.id]);
+  if(isManual) return coords;
+  const maxCol = (ROW_COLS[cell.row] ? ROW_COLS[cell.row].length - 1 : 0);
+  const dy = autoLineShiftY(phase, cell.row);
+  const dx = autoWidthShiftX(phase, cell.col, maxCol);
+  return { x: clampPct(coords.x + dx), y: clampPct(coords.y + dy) };
+}
+
+// Default cell per token (same starting layout for both phases; user drags from here)
+function defaultLayout(){
+  return {
+    gk:  {col:0, row:5},
+    dl:  {col:0, row:4},
+    dcl: {col:1, row:4},
+    dcr: {col:3, row:4},
+    dr:  {col:4, row:4},
+    dml: {col:1, row:2},
+    dmr: {col:3, row:2},
+    aml: {col:0, row:1},
+    amc: {col:2, row:1},
+    amr: {col:4, row:1},
+    st:  {col:1, row:0}
+  };
+}
+
+// ---------- Resolve slot's current display coordinates by phase ----------
+function getDisplayCoords(slot){
+  return getDisplayCoordsForPhase(slot, state.viewMode);
+}
+
+
+function westHamStartingXI(){
+  return {
+    gk:  { roleKey:null,  oopRoleKey:null, playerName:"코스타스 졸라키스", instrOverrides:{} },
+    dl:  { roleKey:"WB",  oopRoleKey:null, playerName:"엘 하지 말리크 디우프", instrOverrides:{} },
+    dcl: { roleKey:"CB",  oopRoleKey:null, playerName:"맥스 킬먼", instrOverrides:{} },
+    dcr: { roleKey:"BCB", oopRoleKey:null, playerName:"장 클레르 토디보", instrOverrides:{} },
+    dr:  { roleKey:"FB",  oopRoleKey:null, playerName:"에런 완 비사카", instrOverrides:{} },
+    dml: { roleKey:"CM",  oopRoleKey:null, playerName:"숭궁투 마가사", instrOverrides:{} },
+    dmr: { roleKey:"BBM", oopRoleKey:null, playerName:"토마시 소우체크", instrOverrides:{} },
+    aml: { roleKey:"IF",  oopRoleKey:null, playerName:"크리센시오 서머빌", instrOverrides:{} },
+    amc: { roleKey:"AP",  oopRoleKey:null, playerName:"마테우스 페르난데스", instrOverrides:{} },
+    amr: { roleKey:"IF",  oopRoleKey:null, playerName:"재러드 보언", instrOverrides:{} },
+    st:  { roleKey:"TF",  oopRoleKey:null, playerName:"발렌틴 카스테야노스", instrOverrides:{} }
+  };
+}
+
+function applyWestHamStartingXI(){
+  state.slots = westHamStartingXI();
+  state.activeSlotId = null;
+  renderPitch();
+  renderSquadStrip();
+  renderSlotEditor();
+}
+
+let state = {
+  activeSlotId: null,
+  slots: westHamStartingXI(),   // slotId -> { roleKey, playerName, instrOverrides:{}, ppmSelected:[] }
+  teamMentality: "balanced",
+  teamInstr: {},   // "category.field" -> value
+  activeTeamCategory: "in_possession",
+  viewMode: "atk",     // atk | def — which phase layout is being edited/viewed
+  layouts: { atk: defaultLayout(), def: defaultLayout(), mix: defaultLayout() },
+  // 드래그로 직접 옮긴 슬롯만 여기 기록된다 (phase -> slotId -> true).
+  // 기록되지 않은 슬롯은 팀 지침에 따라 자동으로 위치가 계산된다.
+  manualLayouts: { atk: {}, def: {}, mix: {} },
+  showPassNet: false,
+  showHeatmap: false
+};
+
+function slotState(slotId){
+  if(!state.slots[slotId]){
+    state.slots[slotId] = { roleKey:null, oopRoleKey:null, playerName:null, instrOverrides:{} };
+  }
+  return state.slots[slotId];
+}
+
+function currentFormationSlots(){
+  return CANONICAL_SLOTS;
+}
+function findSlot(slotId){
+  return currentFormationSlots().find(s => s.id === slotId);
+}
+
+// ---------- DM/MC 동적 롤 그룹 ----------
+// dml/dmr(8번·6번) 슬롯은 원래 DM 전용이지만, 공 소유 시(atk) 라인을 끌어올려
+// 2선(AM 라인) 높이까지 전진 배치하면 더이상 순수 홍딩 미드필더가 아니라
+// 중앙 미드필더(MC)에 가깜운 움직임이 되므로, 배치된 라인(row)에 따라 롤 목록
+// 자체를 다르게 보여준다. 기준: atk 레이아웃의 row가 2 이하(3선=기본값 포함)면 MC, 4선 이하로 더 내려가면(row>=3) DM.
+function rowForSlotInPhase(slot, phase){
+  const layout = (state.layouts[phase] && state.layouts[phase][slot.id]) || defaultLayout()[slot.id];
+  return layout ? layout.row : null;
+}
+function activeRoleGroupForSlot(slot, phase){
+  const meta = POSITION_META[slot.code];
+  if(!meta) return null;
+  if(slot.code === "DM"){
+    const row = rowForSlotInPhase(slot, phase || "atk");
+    return (row !== null && row <= 2) ? "MC" : "DM";
+  }
+  return meta.group;
+}
+// 이미 배정된 롤(roleKey)은 현재 라인과 무관하게 DM/MC 롤 파일을 모두 뒤져 찾는다
+// — 라인을 다시 내려도 이미 고른 롤 정보가 깨지 않도록.
+function findRoleForSlot(slot, roleKey){
+  if(!roleKey) return null;
+  const groups = slot.code === "DM" ? ["DM", "MC"] : [(POSITION_META[slot.code] || {}).group];
+  for(const g of groups){
+    if(!g) continue;
+    const found = (ROLE_FILES[g] || []).find(r => r.role === roleKey);
+    if(found) return found;
+  }
+  return null;
+}
+
+// ---------- Coach prompt export ----------
+function generateCoachPrompt() {
+  let md = `# 현재 전술 개요\n`;
+  md += `- 팀 멘탈리티: ${teamValueLabel(state.teamMentality)}\n`;
+
+  const teamKeys = Object.keys(state.teamInstr);
+  if (teamKeys.length > 0) {
+    md += `- 설정된 팀 지침:\n`;
+    teamKeys.forEach(key => {
+      const [category, field] = key.split('.');
+      const label = TEAM_FIELD_LABELS[field] || field;
+      const val = state.teamInstr[key];
+      const valLabel = typeof val === 'boolean' ? (val ? "사용" : "미사용") : teamValueLabel(val);
+      md += `  * ${label}: ${valLabel}\n`;
+    });
+  } else {
+    md += `- 설정된 특별한 팀 지침 없음\n`;
+  }
+
+  md += `\n# 포지션 및 선수 배정 현황\n`;
+  const slots = currentFormationSlots();
+  slots.forEach(slot => {
+    const st = slotState(slot.id);
+    if (st.roleKey || st.playerName) {
+      const roleTxt = st.roleKey ? st.roleKey : "롤 미지정";
+      const playerTxt = st.playerName ? st.playerName : "선수 미지정";
+
+      let fitTxt = "";
+      let profileTxt = "";
+      if (st.playerName && st.roleKey) {
+        const role = findRoleForSlot(slot, st.roleKey);
+        const fit = role ? computeRoleFit(ROSTER[st.playerName], role) : null;
+        if (fit) {
+          // 척도를 같이 준다. 숫자만 주면 높은지 낮은지 판단할 수 없다
+          fitTxt = ` / 롤 적합도 ${fit.avg.toFixed(1)}/20 (핵심능력치 ${fit.total}개 중 ${fit.count}개 반영)`;
+        }
+      }
+      // 발·특성은 기억에 의존하지 말고 데이터로 넘긴다
+      const pdata = ROSTER[st.playerName];
+      if (pdata) {
+        const bits = [];
+        if (pdata.발) {
+          // 칸수만 주면 판단이 안 된다. foot-scale.json 기준으로 능력치 범위를 같이 붙인다
+          const bands = (GAME_DATA.foot_scale && GAME_DATA.foot_scale.bands) || [];
+          const withRange = v => {
+            const n = parseInt(String(v), 10);
+            const b = bands.find(x => x['칸'] === n);
+            return b ? `${v}(${b.min}~${b.max})` : String(v);
+          };
+          const f = typeof pdata.발 === "object"
+            ? Object.entries(pdata.발).map(([k, v]) => `${k} ${withRange(v)}`).join(" / ")
+            : withRange(pdata.발);
+          bits.push(`발 ${f}`);
+        }
+        const ppm = pdata.특성;
+        if (ppm && ppm.length) bits.push(`특성: ${[].concat(ppm).join(" / ")}`);
+        else bits.push("특성 기록 없음");
+        if (bits.length) profileTxt = `\n    · ${bits.join(" · ")}`;
+      }
+
+      let instrTxt = "";
+      const overrides = Object.keys(st.instrOverrides);
+      if (overrides.length > 0) {
+        const instrs = overrides.map(k => `${PI_LABELS[k] || k}(${piValueLabel(st.instrOverrides[k])})`).join(", ");
+        instrTxt = ` / 강제 지침: ${instrs}`;
+      }
+
+      md += `- ${slotNumber(slot.id)}번: ${playerTxt} / ${roleTxt}${fitTxt}${instrTxt}${profileTxt}\n`;
+    }
+  });
+
+  if (EVIDENCE && EVIDENCE.trim()) {
+    md += `\n# 시즌 근거 데이터\n${EVIDENCE}\n`;
+  } else {
+    md += `\n# 시즌 근거 데이터\n(아직 경기 기록이 없습니다. 이 전술 평가는 데이터 근거 없이 일반론에 기댄 것입니다.)\n`;
+  }
+
+  md += `\n---\n`;
+  md += [
+    `이예은 코치, 위 전술을 봐주시죠. 최종 결정은 내가 합니다 — 결론을 강요하지 말고 판단 재료를 주세요.`,
+    ``,
+    `- **별점이나 적합도 점수만으로 평가하지 마세요.** 점수가 낮아도 역할·지침과 맞물리면 되는 경우가 있습니다.`,
+    `- 위에 적힌 롤·지침·발·특성·적합도, 그리고 시즌 근거 데이터를 **근거로 삼아** 말해주세요.`,
+    `- 근거가 있는 지적과 없는 지적을 섞지 말고, 근거 없는 판단은 **"가설입니다만"**으로 시작하세요.`,
+    `- 보고 싶은 것: 공수 밸런스, 선수 동선 겹침, 비는 공간, 지침끼리 상충하는 부분, 그리고 **잘 짜인 부분**.`,
+    `- 데이터에 없는 것을 지어내지 마세요. 모르면 모른다고 하고, 필요한 자료를 요청하세요.`
+  ].join('\n');
+
+  copyTextWithFallback(md);
+}
+
+// navigator.clipboard 는 file:// (보안 컨텍스트 아님)에서 없는 경우가 많다.
+// 없거나 실패하면 임시 textarea + execCommand 로 시도하고, 그것도 안 되면 직접 복사하게 보여준다.
+function copyTextWithFallback(text){
+  const done = () => alert("수석코치에게 전달할 전술 프롬프트가 클립보드에 복사되었습니다!\nAI 챗봇에 붙여넣기 해보세요.");
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => legacyCopy(text, done));
+    return;
+  }
+  legacyCopy(text, done);
+}
+
+function legacyCopy(text, done){
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+  document.body.removeChild(ta);
+  if (ok) done();
+  else prompt("자동 복사가 안 됐습니다. 아래 내용을 직접 선택해서 복사하세요 (Ctrl+A, Ctrl+C):", text);
+}
+
+// ---------- Local storage save/load & JSON download ----------
+function saveToLocalStorage() {
+  localStorage.setItem('fmTacticsSave', JSON.stringify(state));
+  alert('전술이 브라우저에 저장되었습니다.');
+}
+
+function loadFromLocalStorage() {
+  const savedData = localStorage.getItem('fmTacticsSave');
+  if (!savedData) {
+    alert('저장된 전술 데이터가 없습니다.');
+    return;
+  }
+  try {
+    const parsed = JSON.parse(savedData);
+    Object.assign(state, parsed);
+    if(!state.manualLayouts) state.manualLayouts = { atk: {}, def: {}, mix: {} };
+    state.activeSlotId = null;
+    syncViewControlButtons();
+    renderPitch();
+    renderSquadStrip();
+    renderSlotEditor();
+    renderTeamEditor();
+    alert('저장된 전술을 불러왔습니다.');
+  } catch (err) {
+    alert('저장된 데이터를 읽는 데 실패했습니다.');
+    console.error(err);
+  }
+}
+
+function downloadTacticsJson() {
+  const jsonString = JSON.stringify(state, null, 2);
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  const fileName = "fm_tactics_" + new Date().getTime() + ".json";
+  downloadAnchor.setAttribute("download", fileName);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+// ---------- Init ----------
+function init(){
+  buildTopTabs();
+  buildTeamEditorShell();
+  initViewControls();
+  renderPitch();
+  renderSquadStrip();
+  renderSlotEditor();
+  renderTeamEditor();
+  document.getElementById("exportPromptBtn").addEventListener("click", generateCoachPrompt);
+  document.getElementById("westHamPresetBtn").addEventListener("click", () => {
+    if(confirm("현재 배치를 웨스트햄 능력치 기반 XI로 바꿀까요?")) applyWestHamStartingXI();
+  });
+  document.getElementById("saveLocalBtn").addEventListener("click", saveToLocalStorage);
+  document.getElementById("loadLocalBtn").addEventListener("click", loadFromLocalStorage);
+  document.getElementById("downloadJsonBtn").addEventListener("click", downloadTacticsJson);
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if(confirm("모든 배치와 지침을 초기화할까요?")){
+      state.slots = {};
+      state.activeSlotId = null;
+      state.teamMentality = "balanced";
+      state.teamInstr = {};
+      state.layouts = { atk: defaultLayout(), def: defaultLayout(), mix: defaultLayout() };
+      state.manualLayouts = { atk: {}, def: {}, mix: {} };
+      renderPitch();
+      renderSquadStrip();
+      renderSlotEditor();
+      renderTeamEditor();
+    }
+  });
+}
+
+function syncViewControlButtons(){
+  document.querySelectorAll(".view-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === state.viewMode));
+  const passBtn = document.getElementById("togglePassBtn");
+  const heatBtn = document.getElementById("toggleHeatBtn");
+  if(passBtn) passBtn.classList.toggle("active", !!state.showPassNet);
+  if(heatBtn) heatBtn.classList.toggle("active", !!state.showHeatmap);
+}
+
+function initViewControls(){
+  document.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".view-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      state.viewMode = btn.dataset.mode;
+      renderPitch();
+    });
+  });
+  document.getElementById("togglePassBtn").addEventListener("click", (e) => {
+    state.showPassNet = !state.showPassNet;
+    e.currentTarget.classList.toggle("active", state.showPassNet);
+    renderPitch();
+  });
+  document.getElementById("toggleHeatBtn").addEventListener("click", (e) => {
+    state.showHeatmap = !state.showHeatmap;
+    e.currentTarget.classList.toggle("active", state.showHeatmap);
+    renderPitch();
+  });
+}
+
+function buildTopTabs(){
+  document.querySelectorAll(".top-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".top-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const target = tab.dataset.tab;
+      document.getElementById("tab-slot").classList.toggle("hidden", target !== "slot");
+      document.getElementById("tab-team").classList.toggle("hidden", target !== "team");
+    });
+  });
+}
+
+// ---------- Pitch rendering ----------
+function buildSlotEl(slot, phase, draggable){
+  const st = slotState(slot.id);
+  const el = document.createElement("div");
+  el.className = "slot" + (st.roleKey || st.playerName ? " filled" : "") + (state.activeSlotId === slot.id ? " active" : "") + (phase === "def" ? " phase-def" : "") + (phase === "mix" ? " phase-mix" : "") + (phase === "buildup" ? " phase-buildup" : "");
+  const coords = getDisplayCoordsForPhase(slot, phase);
+  el.style.left = coords.x + "%";
+  el.style.top = coords.y + "%";
+
+  const dot = document.createElement("div");
+  dot.className = "dot";
+  dot.textContent = slotNumber(slot.id);
+  el.appendChild(dot);
+
+  const displayRoleKey = phase === "def" ? st.oopRoleKey : st.roleKey;
+  if(displayRoleKey){
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = displayRoleKey;
+    el.appendChild(tag);
+  }
+
+  if(st.playerName){
+    const pname = document.createElement("div");
+    pname.className = "pname";
+    pname.textContent = st.playerName;
+    el.appendChild(pname);
+
+    if(st.roleKey){
+      const role = findRoleForSlot(slot, st.roleKey);
+      const fit = role ? computeRoleFit(ROSTER[st.playerName], role) : null;
+      if(fit){
+        const fitTag = document.createElement("div");
+        fitTag.className = "slot-fit";
+        fitTag.textContent = "★".repeat(Math.max(1, Math.round(fit.stars))) ;
+        fitTag.title = `${role.role} 적합도 평균 ${fit.avg.toFixed(1)}/20`;
+        el.appendChild(fitTag);
+      }
+    }
+  }
+
+  el.draggable = draggable;
+  if(draggable){
+    el.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", slot.id);
+      e.dataTransfer.effectAllowed = "move";
+      showGridOverlay(phase);
+    });
+    el.addEventListener("dragend", () => {
+      hideGridOverlay();
+    });
+  }
+
+  el.addEventListener("click", () => {
+    state.activeSlotId = slot.id;
+    renderPitch();
+    renderSlotEditor();
+    document.querySelector('.top-tab[data-tab="slot"]').click();
+  });
+
+  el.addEventListener("dblclick", (e) => {
+    e.stopPropagation();
+    if(state.manualLayouts[phase] && state.manualLayouts[phase][slot.id]){
+      delete state.manualLayouts[phase][slot.id];
+      renderPitch();
+    }
+  });
+
+  return el;
+}
+
+function renderPitch(){
+  const layer = document.getElementById("slotsLayer");
+  layer.innerHTML = "";
+  layer.style.position = "absolute";
+  layer.style.inset = "0";
+  const dragEnabled = state.viewMode !== "buildup";
+  currentFormationSlots().forEach(slot => {
+    if(state.viewMode === "mix"){
+      layer.appendChild(buildSlotEl(slot, "mix", dragEnabled));
+    } else {
+      layer.appendChild(buildSlotEl(slot, state.viewMode, dragEnabled));
+    }
+  });
+
+  renderPassNet();
+  renderHeatmap();
+}
+
+// ---------- Drag & drop grid overlay ----------
+function showGridOverlay(phase){
+  hideGridOverlay();
+  const pitch = document.getElementById("pitch");
+  const grid = document.createElement("div");
+  grid.id = "dragGrid";
+  grid.style.position = "absolute";
+  grid.style.inset = "0";
+  grid.style.zIndex = "1";
+  GRID_ROWS.forEach((rowY, r) => {
+    ROW_COLS[r].forEach((colX, c) => {
+      const cell = document.createElement("div");
+      cell.className = "grid-cell";
+      cell.style.left = colX + "%";
+      cell.style.top = rowY + "%";
+      cell.addEventListener("dragover", (e) => { e.preventDefault(); cell.classList.add("hover"); });
+      cell.addEventListener("dragleave", () => cell.classList.remove("hover"));
+      cell.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const slotId = e.dataTransfer.getData("text/plain");
+        if(slotId){
+          state.layouts[phase][slotId] = { col: c, row: r };
+          if(!state.manualLayouts[phase]) state.manualLayouts[phase] = {};
+          state.manualLayouts[phase][slotId] = true;
+          renderPitch();
+        }
+      });
+      grid.appendChild(cell);
+    });
+  });
+  pitch.appendChild(grid);
+}
+function hideGridOverlay(){
+  const g = document.getElementById("dragGrid");
+  if(g) g.remove();
+}
+
+// ---------- Pass map overlay ----------
+// 실제 FM 패스맵처럼 "포메이션상 자연스러운 패스 루트"를 미리 정의해두고,
+// 각 루트의 굵기(=핵심도)와 실선/점선(=밀접함)은 롤 지침에 따른 실제 위치
+// 차이로 매 순간 다시 계산한다. 색은 빌드업 구간(초록) / 전개·창조 구간(골드)
+// / 오버랩·스위치처럼 상황적으로만 열리는 구간(회색) 세 가지로 구역을 나눈다.
+const PASSMAP_EDGES = [
+  // GK → 백4 배급 루트 (distribution_target 지침에 따라 선호도가 갈린다)
+  { a:'gk',  b:'dl',  cat:'green', tier:'gk' },
+  { a:'gk',  b:'dcl', cat:'green', tier:'gk' },
+  { a:'gk',  b:'dcr', cat:'green', tier:'gk' },
+  { a:'gk',  b:'dr',  cat:'green', tier:'gk' },
+  // 백라인 내부 연결
+  { a:'dl',  b:'dcl', cat:'green', tier:'back' },
+  { a:'dcl', b:'dcr', cat:'green', tier:'back' },
+  { a:'dcr', b:'dr',  cat:'green', tier:'back' },
+  // 백라인 → 피벗(DM)
+  { a:'dl',  b:'dml', cat:'green', tier:'back-pivot' },
+  { a:'dcl', b:'dml', cat:'green', tier:'back-pivot' },
+  { a:'dcr', b:'dmr', cat:'green', tier:'back-pivot' },
+  { a:'dr',  b:'dmr', cat:'green', tier:'back-pivot' },
+  // 더블 피벗
+  { a:'dml', b:'dmr', cat:'green', tier:'pivot' },
+  // 피벗 → 공격형 미드필더 (창조 구간 진입)
+  { a:'dml', b:'amc', cat:'gold',  tier:'pivot-am' },
+  { a:'dmr', b:'amc', cat:'gold',  tier:'pivot-am' },
+  // 최전방 라인 내부
+  { a:'aml', b:'amc', cat:'gold',  tier:'am-line' },
+  { a:'amc', b:'amr', cat:'gold',  tier:'am-line' },
+  // 최종 존 → 스트라이커
+  { a:'aml', b:'st',  cat:'gold',  tier:'final' },
+  { a:'amc', b:'st',  cat:'gold',  tier:'final' },
+  { a:'amr', b:'st',  cat:'gold',  tier:'final' },
+  // 풀백 오버랩 / 피벗-측면 스위치 — 상시가 아니라 상황적으로만 열리는 루트
+  { a:'dl',  b:'aml', cat:'gray',  tier:'overlap' },
+  { a:'dr',  b:'amr', cat:'gray',  tier:'overlap' },
+  { a:'dml', b:'aml', cat:'gray',  tier:'switch' },
+  { a:'dmr', b:'amr', cat:'gray',  tier:'switch' }
+];
+
+const PASSMAP_TIER_WIDTH = {
+  gk: 2.2, back: 3.0, 'back-pivot': 2.4, pivot: 2.8,
+  'pivot-am': 2.0, 'am-line': 2.0, final: 1.6, overlap: 1.4, switch: 1.3
+};
+// stretchRatio(=실제/기준 거리)가 이 값을 넘으면 점선으로 바뀐다. 상황적 루트(overlap/switch)는
+// 기본이 점선이고, 실제로 두 선수가 바짝 붙어 있을 때만(< 0.85) 실선으로 반전된다.
+const PASSMAP_TIER_DASH_THRESHOLD = {
+  gk: 1.15, back: 1.15, 'back-pivot': 1.15, pivot: 1.15,
+  'pivot-am': 1.1, 'am-line': 1.1, final: 1.05, overlap: 0.85, switch: 0.85
+};
+const PASSMAP_CATEGORY_COLOR = { green: '#34d399', gold: '#d6a24e', gray: '#94a3b8' };
+
+// 이 루트에 관여하는 두 슬롯이 항상 정확히 이 간격이어야 한다는 "기준 거리".
+// 실제 팀 지침/드래그/롤 지침으로 벌어지거나 좁혀진 정도를 여기와 비교해 점선 여부를 정한다.
+const PASSMAP_NOMINAL_DIST = (() => {
+  const layout = defaultLayout();
+  const map = {};
+  PASSMAP_EDGES.forEach(e => {
+    const ca = cellToXY(layout[e.a].col, layout[e.a].row);
+    const cb = cellToXY(layout[e.b].col, layout[e.b].row);
+    map[e.a + '|' + e.b] = Math.hypot(ca.x - cb.x, ca.y - cb.y) || 1;
+  });
+  return map;
+})();
+
+// GK 배급 대상 지침에 따라 백4 각 루트의 비중을 조절 (선호되는 쪽은 굵고 진하게, 아닌 쪽은 얇고 흐리게)
+const GK_TARGET_BIAS = {
+  center_backs: { dcl: 1.6, dcr: 1.6, dl: 0.45, dr: 0.45 },
+  full_backs:   { dl: 1.6, dr: 1.6, dcl: 0.5, dcr: 0.5 },
+  flanks:       { dl: 1.5, dr: 1.5, dcl: 0.6, dcr: 0.6 },
+  playmaker:    { dl: 0.5, dr: 0.5, dcl: 0.75, dcr: 0.75 },
+  behind_defence:{ dl: 0.5, dr: 0.5, dcl: 0.5, dcr: 0.5 }
+};
+// 왼쪽/오른쪽/중앙 슬롯 구분 — focus_play(공격 집중 방향) 지침을 반영할 때 쓴다
+const PASSMAP_SIDE = { gk:'C', dl:'L', dcl:'C', dcr:'C', dr:'R', dml:'C', dmr:'C', aml:'L', amc:'C', amr:'R', st:'C' };
+const FOCUS_PLAY_BIAS = {
+  left:         { L: 1.35, R: 0.6,  C: 1.0 },
+  right:        { L: 0.6,  R: 1.35, C: 1.0 },
+  both_flanks:  { L: 1.25, R: 1.25, C: 0.7 },
+  center:       { L: 0.65, R: 0.65, C: 1.3 },
+  mixed:        { L: 1,    R: 1,    C: 1 }
+};
+
+// 기존에 있던 "동선 충돌 / 오버랩 시너지" 같은 특수 인사이트는 구조도 위에 강조선으로 얹는다.
+const ROLE_INSIGHT_RULES = [
+  { a: ['IWB'], b: ['IF','IW'], color: '#e11d48', dash: '4,4', width: 3.5, label: '⚠️ 동선 충돌 (하프스페이스 중복)', sameFlankOnly: true },
+  { a: ['FB','WB'], b: ['IF','IW'], color: '#22c55e', dash: 'none', width: 4, label: '✨ 시너지 (오버래핑 & 인사이드 침투)', sameFlankOnly: true },
+  { a: ['DLP','BBP','BCB'], b: ['SS','IF','W','P'], color: '#60a5fa', dash: '2,2', width: 2, label: '주요 빌드업 패스 루트', sameFlankOnly: false },
+  { a: ['TF','F9','DLF'], b: ['SS','IF'], color: '#3b82f6', dash: 'none', width: 2.5, label: '연계 & 스루패스 루트', sameFlankOnly: false }
+];
+
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+function renderPassNet(){
+  const svg = document.getElementById("overlaySvg");
+  const legend = document.getElementById("passmapLegend");
+  if(!svg) return;
+  svg.innerHTML = "";
+  if(legend) legend.classList.toggle("active", !!state.showPassNet);
+  if(!state.showPassNet) return;
+
+  const slots = currentFormationSlots();
+  const distTarget = state.teamInstr["build_up.distribution_target"] || "mixed";
+  const focusPlay = state.teamInstr["progression.focus_play"] || "mixed";
+  const focusBias = FOCUS_PLAY_BIAS[focusPlay] || FOCUS_PLAY_BIAS.mixed;
+
+  // 슬롯별: 실제 표시 좌표(coords) + 롤 지침이 반영된 "체감 위치"(effective, 히트맵 중심과 동일 로직)
+  const nodes = {};
+  slots.forEach(s => {
+    const st = slotState(s.id);
+    if(!st.roleKey && s.id !== 'gk') return; // GK는 롤 선택이 없는 포지션이라 예외
+    const coords = getDisplayCoords(s);
+    const instrMap = getRoleInstrMap(s, st);
+    const eff = computeHeatShape(coords, instrMap);
+    nodes[s.id] = { role: st.roleKey, x: coords.x, y: coords.y, ex: eff.cx, ey: eff.cy };
+  });
+
+  // 1) 구조적 패스 루트 — 매번 정의된 22개 레인 중 양쪽에 롤이 배정된 것만 그린다
+  PASSMAP_EDGES.forEach(edge => {
+    const n1 = nodes[edge.a], n2 = nodes[edge.b];
+    if(!n1 || !n2) return;
+
+    const realDist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+    const effDist = Math.hypot(n1.ex - n2.ex, n1.ey - n2.ey);
+    // 실제 물리적 거리 + 롤 지침이 만들어내는 체감 거리를 함께 반영
+    const totalEff = (realDist + effDist) / 2;
+    const nominal = PASSMAP_NOMINAL_DIST[edge.a + '|' + edge.b] || totalEff || 1;
+    const stretchRatio = totalEff / nominal;
+
+    let width = PASSMAP_TIER_WIDTH[edge.tier];
+    const closeness = clamp(1.4 - stretchRatio * 0.4, 0.55, 1.4);
+    width *= closeness;
+
+    // GK 배급 성향 반영 (gk-* 루트만 해당)
+    if(edge.a === 'gk'){
+      const bias = GK_TARGET_BIAS[distTarget];
+      if(bias && bias[edge.b] != null) width *= bias[edge.b];
+    }
+    // 공격 집중 방향(focus_play) 반영 — 같은 쪽 슬롯끼리 연결된 루트만 가중
+    const sideA = PASSMAP_SIDE[edge.a], sideB = PASSMAP_SIDE[edge.b];
+    const edgeSide = sideA === sideB ? sideA : 'C';
+    width *= focusBias[edgeSide] ?? 1;
+
+    width = clamp(width, 0.8, 4.4);
+
+    let dashed = stretchRatio > PASSMAP_TIER_DASH_THRESHOLD[edge.tier];
+    if(edge.tier === 'overlap' || edge.tier === 'switch'){
+      dashed = stretchRatio > PASSMAP_TIER_DASH_THRESHOLD[edge.tier]; // 기본 점선, 밀접할 때만 실선
+    }
+
+    const color = PASSMAP_CATEGORY_COLOR[edge.cat];
+    const dash = dashed ? `${(width * 2.2).toFixed(1)},${(width * 1.6).toFixed(1)}` : 'none';
+    const opacity = dashed ? (edge.cat === 'gray' ? 0.45 : 0.55) : 0.85;
+
+    drawPassLine(svg, n1, n2, color, dash, width, opacity, null);
+  });
+
+  // 1-1) 배급 대상이 "플레이메이커"면 dml/dmr 중 실제로 그 역할에 맞는 슬롯으로 강조선을 하나 더 그린다
+  // (기존 22개 구조 루트엔 GK→DM 라인이 없어서, 이 지침을 골랐을 때 실제로 보이는 선이 없었음)
+  if(distTarget === 'playmaker' && nodes.gk){
+    const PLAYMAKER_PRIORITY = ['DLP','BBP','AP','DM'];
+    const dmCandidates = ['dml','dmr'].filter(id => nodes[id]);
+    dmCandidates.sort((a,b) => PLAYMAKER_PRIORITY.indexOf(nodes[a].role) - PLAYMAKER_PRIORITY.indexOf(nodes[b].role));
+    const target = dmCandidates.find(id => PLAYMAKER_PRIORITY.includes(nodes[id].role)) || dmCandidates[0];
+    if(target){
+      drawPassLine(svg, nodes.gk, nodes[target], '#60a5fa', '2,2', 3.6, 0.9, 'GK 배급 우선 대상: 플레이메이커');
+    }
+  }
+
+  // 2) 롤 조합 인사이트 — 동선 충돌 경고 / 오버랩 시너지 등은 구조선 위에 강조선으로 얹는다
+  const active = Object.keys(nodes).map(id => ({ id, role: nodes[id].role, x: nodes[id].x, y: nodes[id].y }));
+  for(let i = 0; i < active.length; i++){
+    for(let j = i + 1; j < active.length; j++){
+      const r1 = active[i], r2 = active[j];
+      const sameFlank = (r1.x < 45 && r2.x < 45) || (r1.x > 55 && r2.x > 55);
+      ROLE_INSIGHT_RULES.forEach(rule => {
+        if(rule.sameFlankOnly && !sameFlank) return;
+        const match = (rule.a.includes(r1.role) && rule.b.includes(r2.role)) || (rule.a.includes(r2.role) && rule.b.includes(r1.role));
+        if(match) drawPassLine(svg, r1, r2, rule.color, rule.dash, rule.width, 0.9, rule.label);
+      });
+    }
+  }
+}
+
+function drawPassLine(svg, r1, r2, color, dash, width, opacity, titleText){
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", r1.x);
+  line.setAttribute("y1", r1.y);
+  line.setAttribute("x2", r2.x);
+  line.setAttribute("y2", r2.y);
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-dasharray", dash);
+  line.setAttribute("stroke-width", width);
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("opacity", String(opacity ?? 0.85));
+  if(titleText){
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = titleText;
+    line.appendChild(title);
+  }
+  svg.appendChild(line);
+}
+
+// ---------- Heatmap overlay ----------
+// 롤의 in-possession 지침(instructions)을 읽어서, 그 롤이 실제로 자주 움직이는
+// 방향/범위로 히트맵 타원의 중심과 크기를 늘려준다. y가 작을수록 상대 골대 방향(전진),
+// x가 50보다 작으면 왼쪽 측면, 크면 오른쪽 측면.
+function getRoleInstrMap(slot, st){
+  if(!st.roleKey) return null;
+  const role = findRoleForSlot(slot, st.roleKey);
+  if(!role) return null;
+  const map = {};
+  (role.instructions || []).forEach(ins => { map[ins.field] = ins.value; });
+  return map;
+}
+
+// 슬롯 좌표 + 롤 지침을 바탕으로 히트맵 타원의 중심(x,y)과 가로/세로 반경(px)을 계산.
+function computeHeatShape(coords, instrMap){
+  let cx = coords.x, cy = coords.y;
+  let w = 130, h = 130; // 기본 타원 크기(px)
+
+  if(instrMap){
+    // 전진 성향: 침투가 많을수록 상대 골대 쪽(y 감소)으로 중심을 당기고 세로로 길게 늘림
+    if(instrMap["player.forward_runs"] === "more"){ cy -= 5; h += 70; }
+    if(instrMap["player.forward_runs"] === "less"){ cy += 3; h -= 20; }
+    // 후방 지원 성향(딥라잉): 자기 진영 쪽으로 중심을 당기고 살짝 늘림
+    if(instrMap["player.control_tempo"] === true){ cy += 4; h += 30; }
+    // 자유롭게 포지션을 이탈하는 롤(예: F9, FR, AP)은 커버 범위 자체가 넓음
+    if(instrMap["player.roam_from_position"] === true){ w += 55; h += 55; }
+    if(instrMap["player.roam_from_position"] === false){ w -= 30; h -= 30; }
+    // 좌우 폭 지침: 터치라인 쪽으로 더 벌리거나, 하프스페이스로 좁히거나, 채널로 파고듦
+    if(instrMap["player.attacking_width"] === "wider"){
+      cx += (cx < 50 ? -7 : cx > 50 ? 7 : 0);
+      w += 55;
+    }
+    if(instrMap["player.attacking_width"] === "narrower"){
+      cx += (cx < 50 ? 6 : cx > 50 ? -6 : 0);
+      w -= 25;
+    }
+    if(instrMap["player.attacking_width"] === "move_into_channels"){
+      cx += (cx < 50 ? 4 : cx > 50 ? -4 : 0);
+      cy -= 3;
+      w += 30; h += 30;
+    }
+    // 드리블 빈도가 높으면 볼을 몰고 다니는 구간이 넓어짐
+    if(instrMap["player.dribble_frequency"] === "more"){ w += 20; h += 20; }
+  }
+
+  w = Math.max(70, Math.min(240, w));
+  h = Math.max(70, Math.min(240, h));
+  cx = Math.min(96, Math.max(4, cx));
+  cy = Math.min(96, Math.max(4, cy));
+  return { cx, cy, w, h };
+}
+
+function renderHeatmap(){
+  const layer = document.getElementById("heatmapLayer");
+  const alertBox = document.getElementById("tacticalAlert");
+  if(!layer || !alertBox) return;
+  layer.innerHTML = "";
+
+  if(!state.showHeatmap){
+    layer.classList.remove("active");
+    alertBox.style.display = "none";
+    return;
+  }
+  layer.classList.add("active");
+
+  const slots = currentFormationSlots();
+  let midfieldCount = 0, flankCount = 0;
+
+  slots.forEach(s => {
+    const coords = getDisplayCoords(s);
+    const st = slotState(s.id);
+    const instrMap = getRoleInstrMap(s, st);
+    const shape = computeHeatShape(coords, instrMap);
+
+    const blob = document.createElement("div");
+    blob.style.position = "absolute";
+    blob.style.left = shape.cx + "%";
+    blob.style.top = shape.cy + "%";
+    blob.style.width = shape.w + "px";
+    blob.style.height = shape.h + "px";
+    blob.style.transform = "translate(-50%, -50%)";
+    blob.style.borderRadius = "50%";
+    blob.style.background = st.roleKey
+      ? "radial-gradient(circle, rgba(37,99,235,0.9) 0%, rgba(37,99,235,0.55) 35%, rgba(37,99,235,0.15) 65%, rgba(37,99,235,0) 85%)"
+      : "radial-gradient(circle, rgba(148,163,184,0.55) 0%, rgba(148,163,184,0.2) 55%, rgba(148,163,184,0) 80%)";
+    layer.appendChild(blob);
+
+    // 롤 이동 범위를 반영한 살짝 흐린 코어(중심을 한 번 더 짙게)를 겹쳐 그려 밀도를 높임
+    if(st.roleKey){
+      const core = document.createElement("div");
+      core.style.position = "absolute";
+      core.style.left = shape.cx + "%";
+      core.style.top = shape.cy + "%";
+      core.style.width = Math.round(shape.w * 0.45) + "px";
+      core.style.height = Math.round(shape.h * 0.45) + "px";
+      core.style.transform = "translate(-50%, -50%)";
+      core.style.borderRadius = "50%";
+      core.style.background = "radial-gradient(circle, rgba(29,78,216,0.85) 0%, rgba(29,78,216,0) 80%)";
+      layer.appendChild(core);
+    }
+
+    if(coords.y > 35 && coords.y < 65) midfieldCount++;
+    if(coords.x < 25 || coords.x > 75) flankCount++;
+  });
+
+  alertBox.style.display = "flex";
+  const alerts = [];
+  if(midfieldCount <= 1) alerts.push("<span style='color:#fda4af;'>⚠️ 2선-3선 사이 공간 부족</span>");
+  if(flankCount <= 2) alerts.push("<span style='color:#fde047;'>⚠️ 측면 너비 확보 부족</span>");
+  if(alerts.length === 0) alerts.push("<span style='color:#86efac;'>✓ 피치 전체 밸런스 양호</span>");
+  alertBox.innerHTML = alerts.join(" | ");
+}
+
+function renderSquadStrip(){
+  const wrap = document.getElementById("squadStrip");
+  wrap.innerHTML = "";
+  currentFormationSlots().forEach(slot => {
+    const st = slotState(slot.id);
+    const chip = document.createElement("div");
+    chip.className = "squad-chip" + (st.playerName || st.roleKey ? "" : " empty");
+    const badge = document.createElement("div");
+    badge.className = "pos-badge";
+    badge.textContent = slotNumber(slot.id);
+    chip.appendChild(badge);
+    const text = document.createElement("span");
+    const roleTxt = st.roleKey ? st.roleKey : "롤 미지정";
+    const playerTxt = st.playerName ? " · " + st.playerName : "";
+    text.textContent = roleTxt + playerTxt;
+    chip.appendChild(text);
+    chip.addEventListener("click", () => {
+      state.activeSlotId = slot.id;
+      renderPitch();
+      renderSlotEditor();
+      document.querySelector('.top-tab[data-tab="slot"]').click();
+    });
+    chip.style.cursor = "pointer";
+    wrap.appendChild(chip);
+  });
+}
+
+// ---------- Slot editor ----------
+function renderSlotEditor(){
+  const host = document.getElementById("slotEditor");
+  host.innerHTML = "";
+
+  if(!state.activeSlotId){
+    host.innerHTML = `<div class="empty-state">경기장에서 포지션을 선택하면<br>롤과 개인 지침, 선수 배정을 편집할 수 있습니다.</div>`;
+    return;
+  }
+
+  const slot = findSlot(state.activeSlotId);
+  const st = slotState(slot.id);
+  const meta = POSITION_META[slot.code];
+
+  const header = document.createElement("div");
+  header.innerHTML = `<h2>${slotNumber(slot.id)}</h2>`;
+  host.appendChild(header);
+
+  if(!meta.group){
+    // Goalkeeper: no role file, just player assignment
+    host.appendChild(buildPlayerAssignBlock(slot, st, meta, null));
+    return;
+  }
+
+  // ---- Out-of-possession phase: separate, simpler role picker ----
+  if(state.viewMode === "def"){
+    const oopRoles = OOP_ROLE_FILES[activeRoleGroupForSlot(slot, "def")];
+    if(!oopRoles){
+      host.appendChild(buildPlayerAssignBlock(slot, st, meta, null));
+      const note = document.createElement("div");
+      note.className = "empty-state";
+      note.textContent = "이 포지션은 공 미소유시 전용 롤이 아직 없습니다.";
+      host.appendChild(note);
+      return;
+    }
+    const roleBlock = document.createElement("div");
+    roleBlock.className = "section-block";
+    roleBlock.innerHTML = `<h2>공 미소유시 롤</h2>`;
+    const roleGrid = document.createElement("div");
+    roleGrid.className = "role-grid";
+    oopRoles.forEach(r => {
+      const opt = document.createElement("div");
+      opt.className = "role-opt" + (st.oopRoleKey === r.role ? " sel" : "");
+      opt.innerHTML = `<span class="role-name">${r.role}</span><span class="role-mini">${r.defensive_duty}</span>`;
+      opt.addEventListener("click", () => {
+        st.oopRoleKey = r.role;
+        renderPitch();
+        renderSlotEditor();
+      });
+      roleGrid.appendChild(opt);
+    });
+    roleBlock.appendChild(roleGrid);
+    host.appendChild(roleBlock);
+
+    const selectedOop = oopRoles.find(r => r.role === st.oopRoleKey);
+    if(selectedOop){
+      const descBlock = document.createElement("div");
+      descBlock.className = "role-desc";
+      descBlock.textContent = selectedOop.defensive_duty;
+      host.appendChild(descBlock);
+    }
+
+    host.appendChild(buildPlayerAssignBlock(slot, st, meta, null));
+    return;
+  }
+
+  const activeGroup = activeRoleGroupForSlot(slot, "atk");
+  const roles = ROLE_FILES[activeGroup];
+  const selectedRole = findRoleForSlot(slot, st.roleKey);
+
+  // Role picker
+  const roleBlock = document.createElement("div");
+  roleBlock.className = "section-block";
+  const lineNote = (slot.code === "DM")
+    ? `<span class="default-badge">${activeGroup === "MC" ? "MC 라인 (3선 · 기본값)" : "DM 라인 (4선 이하로 후퇴)"}</span>`
+    : "";
+  roleBlock.innerHTML = `<h2>롤 선택 ${lineNote}</h2>`;
+  if(slot.code === "DM" && selectedRole && !roles.some(r => r.role === selectedRole.role)){
+    const mismatchNote = document.createElement("div");
+    mismatchNote.className = "empty-state";
+    mismatchNote.style.marginTop = "0";
+    mismatchNote.style.marginBottom = "12px";
+    mismatchNote.textContent = "현재 라인(아래 목록) 기준으로는 없는 롤(" + selectedRole.role + ")이 배정되어 있어요. 라인을 움직이면 목록이 바뀌지만, 롤 자체는 직접 바꾸기 전까지 그대로 유지돼요.";
+    roleBlock.appendChild(mismatchNote);
+  }
+  const roleGrid = document.createElement("div");
+  roleGrid.className = "role-grid";
+  roles.forEach(r => {
+    const opt = document.createElement("div");
+    opt.className = "role-opt" + (st.roleKey === r.role ? " sel" : "");
+    opt.innerHTML = `<span class="role-name">${r.role}</span><span class="role-mini">${r.description.length > 34 ? r.description.slice(0,34)+"…" : r.description}</span>`;
+    opt.addEventListener("click", () => {
+      st.roleKey = r.role;
+      st.instrOverrides = {}; // reset overrides to role defaults on role change
+      renderPitch();
+      renderSquadStrip();
+      renderSlotEditor();
+    });
+    roleGrid.appendChild(opt);
+  });
+  roleBlock.appendChild(roleGrid);
+  host.appendChild(roleBlock);
+
+  if(selectedRole){
+    const descBlock = document.createElement("div");
+    descBlock.className = "role-desc";
+    descBlock.textContent = selectedRole.description;
+    host.appendChild(descBlock);
+
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    selectedRole.key_attributes.forEach(a => {
+      const c = document.createElement("span");
+      c.className = "chip";
+      c.textContent = a;
+      chips.appendChild(c);
+    });
+    host.appendChild(chips);
+
+    // Player instructions block
+    host.appendChild(buildPlayerInstructionsBlock(slot, st, selectedRole));
+
+    // PPM recommendation (read-only, not assignable)
+    const assignedPlayer = st.playerName ? ROSTER[st.playerName] : null;
+    host.appendChild(buildPPMBlock(selectedRole, assignedPlayer));
+  }
+
+  // Player assignment
+  host.appendChild(buildPlayerAssignBlock(slot, st, meta, selectedRole));
+}
+
+function roleDefaultValue(role, field){
+  if(!role) return undefined;
+  const found = (role.instructions || []).find(i => i.field === "player."+field);
+  return found ? found.value : undefined;
+}
+
+function buildPlayerInstructionsBlock(slot, st, role){
+  const block = document.createElement("div");
+  block.className = "section-block";
+  block.innerHTML = `<h2>개인 지침</h2>`;
+
+  Object.keys(PLAYER_INSTR_SCHEMA).forEach(field => {
+    const options = PLAYER_INSTR_SCHEMA[field]; // array of allowed values
+    const defaultVal = roleDefaultValue(role, field);
+    const hasOverride = Object.prototype.hasOwnProperty.call(st.instrOverrides, field);
+    const currentVal = hasOverride ? st.instrOverrides[field] : (defaultVal !== undefined ? defaultVal : options[options.length-1]);
+
+    const row = document.createElement("div");
+    row.className = "field-row";
+
+    const label = document.createElement("label");
+    label.innerHTML = PI_LABELS[field] || field;
+    if(defaultVal !== undefined && !hasOverride){
+      const badge = document.createElement("span");
+      badge.className = "default-badge";
+      badge.textContent = "롤 기본";
+      label.appendChild(badge);
+    }
+    row.appendChild(label);
+
+    if(typeof options[0] === "boolean"){
+      const toggle = document.createElement("div");
+      toggle.className = "bool-toggle";
+      [true, false].forEach(v => {
+        const b = document.createElement("button");
+        b.textContent = v ? "예" : "아니오";
+        if(currentVal === v) b.classList.add("on");
+        b.addEventListener("click", () => {
+          st.instrOverrides[field] = v;
+          renderSlotEditor();
+        });
+        toggle.appendChild(b);
+      });
+      row.appendChild(toggle);
+    } else {
+      const sel = document.createElement("select");
+      sel.className = hasOverride ? "is-set" : "is-default";
+      options.forEach(opt => {
+        const o = document.createElement("option");
+        o.value = String(opt);
+        o.textContent = piValueLabel(opt) + (opt === defaultVal ? " (롤 기본)" : "");
+        if(String(opt) === String(currentVal)) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", (e) => {
+        st.instrOverrides[field] = e.target.value;
+        renderSlotEditor();
+      });
+      row.appendChild(sel);
+    }
+    block.appendChild(row);
+  });
+
+  const resetRow = document.createElement("div");
+  resetRow.style.marginTop = "10px";
+  const resetBtn = document.createElement("button");
+  resetBtn.className = "reset-btn";
+  resetBtn.style.fontSize = "11px";
+  resetBtn.style.padding = "5px 10px";
+  resetBtn.textContent = "개인 지침 초기화";
+  resetBtn.addEventListener("click", () => { st.instrOverrides = {}; renderSlotEditor(); });
+  resetRow.appendChild(resetBtn);
+  block.appendChild(resetRow);
+
+  return block;
+}
+
+function buildPPMBlock(role, player){
+  const block = document.createElement("div");
+  block.className = "section-block";
+  block.innerHTML = `<h2>이 롤에 어울리는 선호 플레이</h2>`;
+
+  const note = document.createElement("div");
+  note.className = "role-desc";
+  note.style.fontSize = "12px";
+  note.textContent = "선호 플레이(PPM)는 전술로 지정하는 게 아니라 선수 개개인이 훈련으로 습득하는 특성이에요. 아래는 이 롤과 잘 맞는 특성을 참고용으로 보여주는 추천 목록입니다.";
+  block.appendChild(note);
+
+  const recs = ROLE_PPM_RECOMMENDATIONS[role.role] || [];
+  const chipsWrap = document.createElement("div");
+  chipsWrap.className = "chips";
+  chipsWrap.style.marginTop = "10px";
+
+  if(recs.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "no-player-note";
+    empty.textContent = "이 롤에 대한 추천 데이터가 아직 없어요.";
+    block.appendChild(empty);
+    return block;
+  }
+
+  const playerTraits = player && player["특성"] ? player["특성"] : [];
+  const ownedRecs = [];
+  const notOwnedRecs = [];
+  recs.forEach((trait, idx) => {
+    const item = { trait, priority: idx + 1 };
+    if(playerTraits.includes(trait)) ownedRecs.push(item); else notOwnedRecs.push(item);
+  });
+
+  recs.forEach((trait, idx) => {
+    const owned = playerTraits.includes(trait);
+    const c = document.createElement("span");
+    c.className = "chip ppm-rec-chip" + (owned ? " owned" : "");
+    c.textContent = `${owned ? "✓ " : ""}${idx + 1}순위 · ${trait}`;
+    if(owned) c.title = "배정된 선수가 이미 보유한 특성입니다";
+    chipsWrap.appendChild(c);
+  });
+  block.appendChild(chipsWrap);
+
+  // 추천 특성을 이미 하나라도 보유했다면, 옆에 "다음으로 어울리는 특성"을 우선순위 순으로 더 보여준다.
+  if(player && ownedRecs.length > 0 && notOwnedRecs.length > 0){
+    const nextLabel = document.createElement("div");
+    nextLabel.style.fontSize = "11px";
+    nextLabel.style.color = "var(--accent-deep)";
+    nextLabel.style.fontWeight = "700";
+    nextLabel.style.marginTop = "10px";
+    nextLabel.textContent = "이미 추천 특성을 보유 중 — 다음으로 어울리는 특성";
+    block.appendChild(nextLabel);
+    const nextChips = document.createElement("div");
+    nextChips.className = "chips";
+    nextChips.style.marginTop = "6px";
+    notOwnedRecs.forEach(item => {
+      const c = document.createElement("span");
+      c.className = "chip ppm-rec-chip";
+      c.textContent = `${item.priority}순위 · ${item.trait}`;
+      nextChips.appendChild(c);
+    });
+    block.appendChild(nextChips);
+  }
+
+  if(player){
+    const extra = playerTraits.filter(t => !recs.includes(t));
+    if(extra.length){
+      const extraLabel = document.createElement("div");
+      extraLabel.style.fontSize = "11px";
+      extraLabel.style.color = "var(--text-soft)";
+      extraLabel.style.marginTop = "10px";
+      extraLabel.textContent = "배정된 선수의 다른 보유 특성";
+      block.appendChild(extraLabel);
+      const extraChips = document.createElement("div");
+      extraChips.className = "chips";
+      extraChips.style.marginTop = "6px";
+      extra.forEach(t => {
+        const c = document.createElement("span");
+        c.className = "chip";
+        c.textContent = t;
+        extraChips.appendChild(c);
+      });
+      block.appendChild(extraChips);
+    }
+  }
+
+  return block;
+}
+
+function buildPlayerAssignBlock(slot, st, meta, selectedRole){
+  const block = document.createElement("div");
+  block.className = "section-block player-select-wrap";
+  block.innerHTML = `<h2>선수 배정</h2>`;
+
+  const rosterCodes = (slot.code === "DM") ? ["DM","MC"] : meta.rosterCodes;
+  let candidates = Object.keys(ROSTER).filter(name => {
+    const p = ROSTER[name];
+    const pos = p["포지션"];
+    if(!pos) return true; // unassigned position = eligible for any slot
+    return pos.some(code => rosterCodes.includes(code));
+  });
+
+  // rank by fit to the selected role when one is chosen
+  const fitCache = {};
+  candidates.forEach(name => { fitCache[name] = computeRoleFit(ROSTER[name], selectedRole); });
+  if(selectedRole){
+    candidates = candidates.slice().sort((a,b) => {
+      const fa = fitCache[a] ? fitCache[a].avg : -1;
+      const fb = fitCache[b] ? fitCache[b].avg : -1;
+      return fb - fa;
+    });
+  }
+
+  const sel = document.createElement("select");
+  const noneOpt = document.createElement("option");
+  noneOpt.value = "";
+  noneOpt.textContent = "— 미배정 —";
+  sel.appendChild(noneOpt);
+  candidates.forEach(name => {
+    const o = document.createElement("option");
+    o.value = name;
+    const p = ROSTER[name];
+    const posTxt = p["포지션"] ? p["포지션"].join("/") : "포지션 미지정";
+    const fit = fitCache[name];
+    const fitTxt = fit ? `  ${starString(fit.stars)} ${fit.avg.toFixed(1)}` : "";
+    o.textContent = `${name} (${posTxt})${fitTxt}`;
+    if(st.playerName === name) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", (e) => {
+    st.playerName = e.target.value || null;
+    renderPitch();
+    renderSquadStrip();
+    renderSlotEditor();
+  });
+  block.appendChild(sel);
+
+  if(candidates.length === 0){
+    const note = document.createElement("div");
+    note.className = "no-player-note";
+    note.textContent = "이 포지션에 등록된 후보 선수가 없습니다.";
+    block.appendChild(note);
+  }
+
+  if(st.playerName && ROSTER[st.playerName]){
+    const p = ROSTER[st.playerName];
+    const card = document.createElement("div");
+    card.className = "player-card";
+    const posTxt = p["포지션"] ? p["포지션"].join(" / ") : "포지션 미지정";
+    const footTxt = p["발"] ? `왼발 ${p["발"]["왼발"]} · 오른발 ${p["발"]["오른발"]}` : "";
+    card.innerHTML = `<div class="pname-big">${st.playerName}</div><div class="pmeta">${posTxt}${footTxt ? " · "+footTxt : ""}</div>`;
+
+    const statsWrap = document.createElement("div");
+    if(selectedRole){
+      const fit = computeRoleFit(p, selectedRole);
+      const fitBlock = document.createElement("div");
+      fitBlock.className = "fit-block";
+      if(fit){
+        fitBlock.innerHTML = `
+          <div class="fit-stars">${starString(fit.stars)}</div>
+          <div class="fit-meta">${selectedRole.role} 적합도 · 평균 ${fit.avg.toFixed(1)}/20
+            <span class="fit-count">(${fit.count}/${fit.total}개 능력치 반영)</span>
+          </div>`;
+      } else {
+        fitBlock.innerHTML = `<div class="no-player-note">이 선수는 해당 롤 관련 능력치 데이터가 없어요.</div>`;
+      }
+      statsWrap.appendChild(fitBlock);
+
+      selectedRole.key_attributes.forEach(attr => {
+        const krLabel = ATTR_EN_TO_KR[attr];
+        const val = krLabel ? findStatValue(p, krLabel) : null;
+        const row = document.createElement("div");
+        row.className = "stat-row";
+        const pct = val ? Math.min(100, (val/20)*100) : 0;
+        row.innerHTML = `<div class="stat-label">${attr}</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%"></div></div><div class="stat-num">${val ?? "–"}</div>`;
+        statsWrap.appendChild(row);
+      });
+    } else {
+      const note = document.createElement("div");
+      note.className = "no-player-note";
+      note.textContent = "롤을 먼저 선택하면 관련 능력치가 표시됩니다.";
+      statsWrap.appendChild(note);
+    }
+    card.appendChild(statsWrap);
+
+    if(p["특성"] && p["특성"].length){
+      const tt = document.createElement("div");
+      tt.className = "trait-tags";
+      p["특성"].forEach(t => {
+        const tag = document.createElement("span");
+        tag.className = "trait-tag";
+        tag.textContent = t;
+        tt.appendChild(tag);
+      });
+      card.appendChild(tt);
+    }
+
+    block.appendChild(card);
+  }
+
+  return block;
+}
+
+// ---------- Team instructions editor ----------
+function buildTeamEditorShell(){
+  // nothing pre-built; renderTeamEditor draws everything each time
+}
+
+function renderTeamEditor(){
+  const host = document.getElementById("teamEditor");
+  host.innerHTML = "";
+
+  // Mentality
+  const mBlock = document.createElement("div");
+  mBlock.className = "mentality-row";
+  mBlock.innerHTML = `<h2>멘탈리티</h2>`;
+  const scale = document.createElement("div");
+  scale.className = "mentality-scale";
+  TEAM_SCHEMA.mentality.forEach(m => {
+    const b = document.createElement("button");
+    b.textContent = teamValueLabel(m);
+    if(state.teamMentality === m) b.classList.add("active");
+    b.addEventListener("click", () => { state.teamMentality = m; renderTeamEditor(); renderPitch(); });
+    scale.appendChild(b);
+  });
+  mBlock.appendChild(scale);
+  host.appendChild(mBlock);
+
+  // Category tabs
+  const catKeys = Object.keys(TEAM_SCHEMA.team);
+  const tabs = document.createElement("div");
+  tabs.className = "team-tabs";
+  catKeys.forEach(cat => {
+    const b = document.createElement("button");
+    b.className = "team-tab" + (state.activeTeamCategory === cat ? " active" : "");
+    b.textContent = TEAM_CATEGORY_LABELS[cat] || cat;
+    b.addEventListener("click", () => { state.activeTeamCategory = cat; renderTeamEditor(); });
+    tabs.appendChild(b);
+  });
+  host.appendChild(tabs);
+
+  // Fields for active category
+  const catBlock = document.createElement("div");
+  catBlock.className = "section-block";
+  const fields = TEAM_SCHEMA.team[state.activeTeamCategory];
+  Object.keys(fields).forEach(field => {
+    const options = fields[field];
+    const key = state.activeTeamCategory + "." + field;
+    const hasOverride = Object.prototype.hasOwnProperty.call(state.teamInstr, key);
+    const defaultVal = options.includes("standard") ? "standard" : options[Math.floor(options.length/2)];
+    const currentVal = hasOverride ? state.teamInstr[key] : defaultVal;
+
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const label = document.createElement("label");
+    label.textContent = TEAM_FIELD_LABELS[field] || field;
+    row.appendChild(label);
+
+    if(typeof options[0] === "boolean"){
+      const toggle = document.createElement("div");
+      toggle.className = "bool-toggle";
+      [true, false].forEach(v => {
+        const b = document.createElement("button");
+        b.textContent = v ? "예" : "아니오";
+        if(currentVal === v || String(currentVal) === String(v)) b.classList.add("on");
+        b.addEventListener("click", () => { state.teamInstr[key] = v; renderTeamEditor(); renderPitch(); });
+        toggle.appendChild(b);
+      });
+      row.appendChild(toggle);
+    } else {
+      const sel = document.createElement("select");
+      sel.className = hasOverride ? "is-set" : "is-default";
+      options.forEach(opt => {
+        const o = document.createElement("option");
+        o.value = String(opt);
+        o.textContent = teamValueLabel(opt);
+        if(String(opt) === String(currentVal)) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", (e) => { state.teamInstr[key] = e.target.value; renderTeamEditor(); renderPitch(); });
+      row.appendChild(sel);
+    }
+    catBlock.appendChild(row);
+  });
+  host.appendChild(catBlock);
+}
+
+init();
+
+</script>
+</body>
+</html>

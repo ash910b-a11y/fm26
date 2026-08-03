@@ -1,0 +1,38 @@
+[
+  {
+    "role": "DM",
+    "description": "Screens the back line and links defense to attack, keeping possession with simple passing.",
+    "key_attributes": ["Tackling", "Anticipation", "Positioning", "Teamwork", "Concentration"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "DLP",
+    "description": "Dictates attacks from between defense and midfield with accurate passing, staying reliable defensively.",
+    "key_attributes": ["Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Composure"],
+    "instructions": [
+      { "field": "player.passing_risk", "value": "risky" }
+    ]
+  },
+  {
+    "role": "BBM",
+    "description": "Supports build-up from deep, then bursts into the final third as a goal threat.",
+    "key_attributes": ["Off the Ball", "Passing", "Tackling", "Teamwork", "Work Rate", "Stamina"],
+    "instructions": []
+  },
+  {
+    "role": "HB",
+    "description": "Drops between the center-backs to form a back three, covering against counters.",
+    "key_attributes": ["Heading", "Marking", "Tackling", "Anticipation", "Positioning", "Teamwork", "Strength", "Jumping Reach"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "BBP",
+    "description": "A deep-lying playmaker in build-up who advances into a creative role as the attack progresses.",
+    "key_attributes": ["Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork", "Work Rate"],
+    "instructions": []
+  }
+]

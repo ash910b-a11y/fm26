@@ -1,0 +1,48 @@
+[
+  {
+    "role": "DLF",
+    "description": "Drops deep into space to link attack and midfield, receiving and distributing passes.",
+    "key_attributes": ["Finishing", "Off the Ball", "First Touch", "Technique", "Strength", "Composure"],
+    "instructions": [
+      { "field": "player.control_tempo", "value": true }
+    ]
+  },
+  {
+    "role": "CFD",
+    "description": "A complete No. 9 and primary goal threat who scores directly or creates opportunities.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "First Touch", "Technique", "Acceleration", "Strength", "Composure"],
+    "instructions": []
+  },
+  {
+    "role": "P",
+    "description": "An aggressive goal threat playing on the defender's shoulder to score from through balls.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "Anticipation", "Acceleration", "Composure", "Concentration"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "TF",
+    "description": "Plays on the last line as the main aerial target to link up play and build attacks.",
+    "key_attributes": ["Finishing", "Heading", "Off the Ball", "Strength", "Jumping Reach", "Balance", "Bravery", "Aggression"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": false }
+    ]
+  },
+  {
+    "role": "CHF",
+    "description": "A dynamic goal threat who moves into channels between defenders to shoot or lay off passes.",
+    "key_attributes": ["Dribbling", "Finishing", "Off the Ball", "First Touch", "Technique", "Work Rate", "Acceleration", "Composure"],
+    "instructions": [
+      { "field": "player.attacking_width", "value": "move_into_channels" }
+    ]
+  },
+  {
+    "role": "F9",
+    "description": "Drops deep into the AMC position to link up play, disrupt center-backs, and create space.",
+    "key_attributes": ["Dribbling", "Off the Ball", "Passing", "Vision", "Decisions", "First Touch", "Technique", "Teamwork"],
+    "instructions": [
+      { "field": "player.roam_from_position", "value": true }
+    ]
+  }
+]

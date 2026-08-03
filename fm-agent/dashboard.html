@@ -1,0 +1,2932 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>웨스트햄 — 시즌 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<style>
+  :root {
+    /* 웨스트햄 시그니처 컬러 (그대로 유지하되 포인트로만 사용) */
+    --wh-claret: #7a263a;
+    --wh-blue: #23b5ea; /* 가독성을 위해 살짝 정돈된 스카이 블루 */
+    --wh-gold: #e2c050; /* 너무 튀지 않는 고급스러운 골드 */
+
+    /* 메인 포인트 컬러 */
+    --accent: var(--wh-blue);
+    --accent-dim: #1d9bc7;
+    --accent-soft: rgba(35, 181, 234, 0.12);
+    
+    /* 1. 배경 정돈: 난잡한 방사형 그라데이션 제거, 차분한 다크 톤으로 통일 */
+    --bg: #0b0d10;
+    --bg-grad: #0b0d10;
+    
+    /* 2. 패널 및 라인 정돈: 붉은기를 빼고 뉴트럴하게 맞춰 데이터가 돋보이게 함 */
+    --panel: #15171c;
+    --panel-2: #1c1f26;
+    --line: #282c35;
+    --line-soft: #1f2229;
+    
+    /* 3. 텍스트 가독성 개선: 대비를 살린 깔끔한 폰트 컬러 */
+    --text: #f0f4f8;
+    --muted: #9aa4b1;
+    --muted-dim: #606975;
+    
+    /* 4. 승무패 컬러: 다크 테마에 어울리게 채도 미세 조정 */
+    --win: #36a655;
+    --draw: var(--wh-gold);
+    --loss: #e34c4f;
+    
+    --radius: 8px;
+    --disp: "Oswald", "Pretendard Variable", "Malgun Gothic", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent-soft); color: var(--text); }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg-grad);
+    background-color: var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: "Pretendard Variable", "Malgun Gothic", -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-dim); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  .shell { max-width: 1280px; margin: 0 auto; padding: 38px 28px 110px;
+           display: grid; grid-template-columns: 208px minmax(0,1fr); gap: 48px; align-items: start; }
+
+  /* ---- index nav ---- */
+  #sideNav { position: sticky; top: 26px; }
+  .crest { display: flex; align-items: center; gap: 10px; margin: 6px 0 22px; }
+  .crest svg { flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+  .crest .cname { font-family: var(--disp); font-size: 12.5px; letter-spacing: .03em; color: var(--muted); line-height: 1.35; }
+  .crest .cname b { display: block; color: var(--text); font-size: 14px; font-weight: 600; }
+  .navlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
+             border-left: 1px solid var(--line); }
+  .navlist a { display: flex; align-items: center; gap: 10px; padding: 6.5px 0 6.5px 16px; margin-left: -1px;
+               border-left: 2px solid transparent; font-size: 12.5px; color: var(--muted);
+               text-decoration: none; transition: all .2s ease; }
+  .navlist a .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted-dim); flex: none; transition: all .2s; }
+  .navlist a:hover { color: var(--text); background: linear-gradient(90deg, rgba(255,255,255,0.03), transparent); }
+  .navlist a.active { color: var(--text); border-left-color: var(--wh-gold); background: rgba(226,192,80,.08); }
+  .navlist a.active .dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  #toTop { display: block; margin-top: 18px; font-size: 11px; color: var(--muted-dim); background: none; border: none;
+           cursor: pointer; font: inherit; padding: 6px 0 6px 16px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #toTop.show { opacity: 1; pointer-events: auto; }
+  #toTop:hover { color: var(--text); }
+
+  main { min-width: 0; }
+  .command-header { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; flex-wrap: wrap;
+                    min-height: 148px; margin-bottom: 22px; padding: 30px 30px 26px; overflow: hidden;
+                    background: #171318; border: 1px solid #38242c; border-radius: var(--radius); box-shadow: 0 18px 38px rgba(0,0,0,.2); }
+  .command-header::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--wh-claret); }
+  .command-header::after { content: ""; position: absolute; right: 30px; top: 0; width: 126px; height: 100%; border-left: 1px solid rgba(226,192,80,.15); border-right: 1px solid rgba(226,192,80,.08); pointer-events: none; }
+  .title-block { position: relative; z-index: 1; }
+  .eyebrow { display: block; margin-bottom: 7px; color: var(--wh-gold); font-family: var(--disp); font-size: 11px; font-weight: 500; letter-spacing: .13em; }
+  h1 { font-family: var(--disp); font-weight: 600; font-size: 37px; margin: 0; letter-spacing: .015em; line-height: 1; text-transform: uppercase; }
+  h1 span { color: #f3e6b8; text-shadow: 0 0 20px rgba(226,192,80,.12); }
+  .sub { margin-top: 11px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .reload { position: relative; z-index: 1; margin-left: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .reload label { cursor: pointer; border: 1px solid var(--line); padding: 7px 13px; border-radius: 8px; transition: all .2s; background: var(--panel); }
+  .reload label:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  .reload input { display: none; }
+  .copy-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .linkish { background: var(--accent-soft); color: var(--text); border: 1px solid rgba(35,181,234,.35);
+             border-radius: 8px; padding: 7px 13px; font: inherit; font-size: 12px; cursor: pointer; margin-right: 8px;
+             transition: all .2s; }
+  .linkish:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  .linkish:active { transform: scale(.97); }
+
+  .hyp { border-left: 3px solid var(--line); padding: 4px 0 4px 16px; margin-bottom: 18px; background: rgba(255,255,255,0.01); border-radius: 0 8px 8px 0; }
+  .hyp.open { border-color: var(--draw); }
+  .hyp.supported { border-color: var(--win); }
+  .hyp.rejected { border-color: var(--loss); }
+  .hyp .claim { font-size: 14px; margin-bottom: 6px; font-weight: 500; }
+  .hyp .meta { font-size: 11.5px; color: var(--muted); }
+  .hyp .fals { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+  .hyp .fals b { color: var(--text); }
+  .badge { display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 5px;
+           color: #0b0d10; font-weight: 700; margin-right: 8px; letter-spacing: .02em; }
+  .badge.open { background: var(--draw); }
+  .badge.supported { background: var(--win); }
+  .badge.rejected { background: var(--loss); }
+  .badge.stale { background: var(--muted); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .tile { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
+          transition: all .2s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .tile::after { content: ""; position: absolute; inset: auto 0 0; height: 2px; background: #343943; }
+  .tile:first-child { background: #682438; border-color: rgba(226,192,80,.42); }
+  .tile:first-child::after { background: var(--wh-gold); }
+  .tile:first-child .k, .tile:first-child .v small { color: rgba(255,255,255,.72); }
+  .tile:nth-child(2)::after { background: var(--wh-gold); }
+  .tile:nth-child(3)::after { background: var(--wh-blue); }
+  .tile:nth-child(4), .tile:nth-child(5) { background: #151b21; }
+  .tile:hover { border-color: var(--accent-dim); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .tile .k { font-size: 11px; color: var(--muted); letter-spacing: .08em; font-family: var(--disp); text-transform: uppercase; }
+  .tile .v { font-family: var(--disp); font-size: 28px; font-weight: 600; margin-top: 8px; font-variant-numeric: tabular-nums; color: var(--text); }
+  .tile .v small { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 6px; font-family: inherit; }
+
+  section { scroll-margin-top: 26px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+            padding: 26px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.16); }
+  h2 { font-family: var(--disp); font-size: 16px; margin: 0 0 20px; color: var(--text); font-weight: 600;
+       letter-spacing: .01em; text-transform: none; display: flex; align-items: center; gap: 10px; }
+  h2::before { content: ""; width: 6px; height: 20px; background: var(--wh-claret); border-radius: 2px; display: inline-block; }
+  .chart-wrap { overflow-x: auto; padding-bottom: 8px; }
+  svg { display: block; }
+  .legend { display: flex; gap: 18px; font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  #squadSection > h3 { display: none; }
+  .squad-table { table-layout: fixed; }
+  .squad-table th, .squad-table td { padding: 8px 7px; }
+  .squad-table th:nth-child(1) { width: 28%; }
+  .squad-table th:nth-child(2) { width: 22%; }
+  .squad-table th:nth-child(3) { width: 22%; }
+  .squad-table th:nth-child(4) { width: 28%; }
+  .foot-meter { display: grid; gap: 2px; min-width: 68px; }
+  .foot-meter > span { display: flex; align-items: center; gap: 2px; }
+  .foot-meter b { width: 9px; color: var(--muted); font-size: 9px; font-weight: 700; }
+  .foot-meter i { width: 7px; height: 7px; border-radius: 1px; background: var(--line); border: 1px solid var(--line); }
+  .foot-meter i.on { background: var(--wh-gold); border-color: var(--wh-gold); box-shadow: 0 0 4px rgba(226,192,80,.2); }
+  .attack-score { color: var(--wh-gold); font-weight: 700; margin-right: 6px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; font-family: var(--disp);
+       letter-spacing: .05em; padding: 0 12px 12px; border-bottom: 1px solid var(--line); text-transform: uppercase; }
+  td { padding: 12px; border-bottom: 1px solid var(--line-soft); font-variant-numeric: tabular-nums; }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: var(--panel-2); }
+  tr:last-child td { border-bottom: none; }
+  
+  .res { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; 
+         border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .res.W { background: var(--win); } .res.D { background: var(--draw); color: #000; text-shadow: none; } .res.L { background: var(--loss); }
+  
+  .venue { font-size: 11px; color: var(--muted); border: 1px solid var(--line); background: rgba(255,255,255,0.02); border-radius: 6px; padding: 2px 6px; }
+  .flag { color: var(--draw); cursor: help; margin-left: 4px; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 50px 0; line-height: 1.7; background: var(--panel-2); border-radius: 8px; border: 1px dashed var(--line); }
+  .empty b { display: block; color: var(--text); font-size: 16px; margin-bottom: 4px; }
+
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  h3 { font-size: 12.5px; color: var(--muted); font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  select { background: var(--bg); color: var(--text); border: 1px solid var(--line);
+           border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12.5px; cursor: pointer;
+           transition: all .2s; outline: none; }
+  select:focus, select:hover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  
+  .lineup { display: flex; flex-direction: column; gap: 6px; }
+  .p { display: flex; align-items: center; gap: 10px; font-size: 13.5px; padding: 6px 8px; border-radius: 8px; transition: background .15s; border: 1px solid transparent; }
+  .p:hover { background: var(--panel-2); border-color: var(--line); }
+  .p .no { width: 24px; text-align: right; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .p .role { width: 44px; text-align: center; font-size: 10.5px; color: var(--muted);
+             border: 1px solid var(--line); background: rgba(255,255,255,0.02); border-radius: 4px; padding: 2px 0; }
+  .p .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .rt { min-width: 38px; text-align: center; border-radius: 6px; padding: 3px 0;
+        font-size: 12px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .star { color: var(--draw); font-size: 12px; margin-left: 4px; }
+  .mini td, .mini th { padding: 10px; }
+
+  .stars { position: relative; display: inline-block; font-size: 13px; line-height: 1;
+           letter-spacing: 2px; color: var(--line); vertical-align: middle; }
+  .stars::before { content: "★★★★★"; }
+  .stars i { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: var(--wh-gold); }
+  .stars i::before { content: "★★★★★"; }
+  .stars.pot i { color: var(--win); }
+  .pct { font-size: 11.5px; color: var(--muted); margin-left: 8px; font-variant-numeric: tabular-nums; }
+  .grow { color: var(--win); font-size: 12.5px; font-weight: 600; }
+  
+  .diff { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .diff h4 { font-size: 12px; color: var(--text); margin: 0 0 12px; font-weight: 600; }
+  .diff ul { font-size: 13px; color: var(--muted); margin: 0; padding-left: 20px; }
+  .diff li { margin-bottom: 6px; }
+
+  .filters { display: flex; gap: 12px 18px; align-items: center; font-size: 13px;
+             color: var(--muted); margin-bottom: 20px; flex-wrap: wrap; background: transparent; padding: 0 2px; border: none; }
+  .filters > span:not(.count) { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px 8px 13px; }
+  .filters .count { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 500; color: var(--text); }
+  .pill { display: inline-block; font-size: 11.5px; color: var(--muted);
+          border: 1px solid var(--line); background: rgba(255,255,255,0.02); border-radius: 6px; padding: 2px 8px; }
+  .barcell { display: flex; align-items: center; gap: 10px; }
+  .barcell .b { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
+
+  .pitch-wrap { display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 40px; align-items: start; }
+  .pitch { width: 100%; height: auto; background: rgba(255,255,255,0.01); border-radius: 8px; padding: 10px; border: 1px solid var(--line); }
+  .note { font-size: 13px; color: var(--muted); line-height: 1.7; background: var(--panel-2); padding: 12px 16px; border-radius: 8px; border-left: 3px solid var(--line); }
+  .note b { color: var(--text); font-weight: 600; }
+  .note .warn { color: var(--draw); }
+  .links li { margin-bottom: 5px; }
+  ul { margin: 0 0 16px; padding-left: 20px; }
+  .mini .bar { display: inline-block; height: 5px; border-radius: 3px; background: var(--accent); vertical-align: middle; }
+  .brief { position: relative; overflow: hidden; background: #21171c; border-color: rgba(226,192,80,.32); padding: 24px 26px; }
+  .brief::after { display: none; }
+  .brief h2 { color: var(--text); margin-bottom: 12px; }
+  .brief h2::before { background: var(--wh-gold); }
+  .brief p { max-width: 720px; margin: 0; color: var(--muted); line-height: 1.7; font-size: 13.5px; }
+  .coach-brief-head { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: center; margin-bottom: 24px; }
+  .coach-avatar { width: 220px; height: 220px; border-radius: 10px; object-fit: cover; object-position: center 22%; border: 1px solid rgba(215,185,107,.52); box-shadow: 0 16px 34px rgba(0,0,0,.32); background: #171318; }
+  .coach-brief-head h2 { margin-bottom: 8px; }
+  .coach-empty { border-color: rgba(215,185,107,.34); border-top-color: var(--wh-gold); background: linear-gradient(135deg, rgba(255,255,255,.035), rgba(122,31,57,.08)); }
+  .coach-empty .claim { color: var(--text); font-weight: 600; }
+  .comment-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .comment-card { min-width: 0; padding: 14px 16px; border: 1px solid var(--line); border-top: 2px solid var(--accent); border-radius: 8px; background: rgba(255,255,255,.018); }
+  .comment-card .claim { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .comment-card .claim b { color: var(--text); }
+  .comment-card ul { margin: 0; padding-left: 18px; }
+  .comment-card li { color: var(--muted); font-size: 12.5px; line-height: 1.55; margin-bottom: 5px; }
+  .comment-card .fals { font-size: 12px; }
+  .brief-note { margin: 16px 0 0; font-size: 12px; }
+  .section-label { display: block; margin: -6px 0 18px; color: var(--muted-dim); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .form-panel { background: #141b22; border-color: rgba(35,181,234,.28); padding: 22px 26px 24px; }
+  .form-panel h2 { color: var(--text); margin-bottom: 4px; }
+  .form-panel h2::before { background: var(--wh-blue); }
+  .form-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .form-match { min-width: 0; position: relative; overflow: hidden; padding: 13px 14px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(11,13,16,.38); }
+  .form-match::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--muted-dim); }
+  .form-match.W::before { background: var(--win); }
+  .form-match.D::before { background: var(--draw); }
+  .form-match.L::before { background: var(--loss); }
+  .form-date { color: var(--muted-dim); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .form-opponent { overflow: hidden; margin-top: 7px; color: var(--text); font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+  .form-score { margin-top: 4px; color: var(--text); font-family: var(--disp); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .form-score span { color: var(--muted); font-family: inherit; font-size: 11px; font-weight: 400; }
+  .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; color: var(--muted); font-size: 10.5px; }
+  .form-result { font-weight: 700; }
+  .form-match.W .form-result { color: var(--win); }
+  .form-match.D .form-result { color: var(--draw); }
+  .form-match.L .form-result { color: var(--loss); }
+  .form-caption { margin: 14px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+  .form-caption b { color: var(--text); }
+</style>
+<style>
+  /* Coaching-room visual system */
+  :root {
+    --bg: #0d0e11;
+    --bg-grad: radial-gradient(circle at 80% -10%, rgba(122,38,58,.16), transparent 34%), #0d0e11;
+    --panel: #17181c;
+    --panel-2: #202126;
+    --line: #303139;
+    --line-soft: #25262d;
+    --text: #f2f0ec;
+    --muted: #9b9aa0;
+    --muted-dim: #686970;
+    --wh-claret: #8c3048;
+    --wh-gold: #d7b96b;
+    --wh-blue: #8bb9c8;
+    --accent: var(--wh-gold);
+    --accent-dim: #b89850;
+    --accent-soft: rgba(215,185,107,.12);
+    --radius: 12px;
+  }
+  body { background: var(--bg-grad); }
+  .shell { max-width: 1360px; grid-template-columns: 184px minmax(0,1fr); gap: 38px; padding-top: 30px; }
+  .command-header {
+    display: grid; grid-template-columns: minmax(0,1fr) minmax(330px, .82fr); align-items: stretch;
+    min-height: 154px; padding: 0; background: linear-gradient(115deg, #20151a 0%, #19171b 48%, #15171b 100%);
+    border: 1px solid rgba(215,185,107,.24); border-radius: 16px; box-shadow: 0 24px 55px rgba(0,0,0,.28);
+  }
+  .command-header::before { width: 4px; background: linear-gradient(var(--wh-claret), var(--wh-gold)); }
+  .command-header::after { display: none; }
+  .title-block { display: flex; flex-direction: column; justify-content: center; padding: 22px 30px; }
+  .eyebrow { margin-bottom: 12px; color: var(--wh-gold); letter-spacing: .18em; font-size: 10px; }
+  h1 { font-size: clamp(28px, 3.2vw, 42px); letter-spacing: .02em; white-space: nowrap; }
+  h1 span { color: #f0dca7; }
+  .sub { margin-top: 14px; color: #b9b5b1; }
+  .teamroom-status { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .status-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: var(--muted); font-size: 11px; background: rgba(0,0,0,.16); }
+  .status-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--wh-gold); box-shadow: 0 0 0 3px rgba(215,185,107,.12); }
+  .header-brief { display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 22px 30px; }
+  .header-brief-label { color: var(--muted-dim); font: 10px var(--disp); letter-spacing: .16em; text-transform: uppercase; }
+  .header-mood { display: flex; align-items: center; gap: 12px; color: var(--text); font-size: 19px; font-weight: 650; }
+  .mood-mark { width: 11px; height: 11px; border-radius: 50%; background: var(--wh-blue); box-shadow: 0 0 0 6px rgba(139,185,200,.1); }
+  .header-read { margin: 0; color: #c4c0bc; font-size: 13px; line-height: 1.65; max-width: 340px; }
+  .reload {
+    position: static; grid-column: 1 / -1; width: 100%; margin-left: 0; padding: 0 30px 20px;
+    display: flex; justify-content: flex-end; align-items: center; opacity: 1;
+    border-top: 1px solid rgba(215,185,107,.12); padding-top: 14px;
+  }
+  .copy-actions { justify-content: flex-end; gap: 8px; }
+  .copy-actions .linkish { margin-right: 0; }
+  .reload label { white-space: nowrap; }
+  .reload label, .linkish { background: rgba(13,14,17,.45); border-color: rgba(255,255,255,.12); }
+  .filters { margin: 16px 2px 22px; }
+  .tiles { grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin-bottom: 18px; }
+  .tile { min-height: 112px; padding: 18px; background: #17181c; border-color: #2c2d34; border-radius: 11px; box-shadow: none; }
+  .tile:first-child { background: linear-gradient(145deg, #6d263d, #47202d); border-color: rgba(215,185,107,.38); }
+  .tile:nth-child(2)::after { background: var(--wh-gold); }
+  .tile:nth-child(3)::after { background: var(--wh-blue); }
+  .tile:nth-child(4)::after, .tile:nth-child(5)::after { background: var(--wh-claret); }
+  .tile:hover { transform: translateY(-2px); border-color: rgba(215,185,107,.55); }
+  .tile .v { font-size: 27px; }
+  section { padding: 25px 26px; margin-bottom: 16px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.12); }
+  h2 { margin-bottom: 18px; letter-spacing: .02em; }
+  h2::before { width: 4px; height: 18px; background: var(--wh-claret); }
+  .form-panel { background: linear-gradient(135deg, #151c20, #15171b); border-color: rgba(139,185,200,.22); }
+  .form-panel h2::before { background: var(--wh-blue); }
+  .form-match { background: rgba(8,10,12,.36); border-color: rgba(255,255,255,.1); }
+  .brief { background: linear-gradient(135deg, #24171d, #1c171b); border-color: rgba(215,185,107,.32); }
+  .brief h2::before { background: var(--wh-gold); }
+  .comment-card { border-top-color: var(--wh-gold); background: rgba(255,255,255,.025); }
+  .pill { border-color: rgba(139,185,200,.28); color: var(--wh-blue); }
+  .barcell .b, .mini .bar { background: var(--wh-blue); }
+  .legend .swatch { box-shadow: 0 0 0 2px rgba(255,255,255,.04); }
+
+  /* ---- visual hierarchy: command header, key tiles, coach brief ---- */
+  .command-header {
+    grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+    min-height: 148px;
+    background:
+      radial-gradient(circle at 18% 20%, rgba(122,38,58,.28), transparent 38%),
+      linear-gradient(115deg, #24151c 0%, #19171b 52%, #13161b 100%);
+  }
+  .title-block { position: relative; overflow: hidden; }
+  .title-block::after {
+    content: ""; position: absolute; right: 8%; bottom: 16px; width: 120px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(226,192,80,.55));
+  }
+  .header-brief {
+    border-left: 1px solid rgba(226,192,80,.16);
+    background: rgba(0,0,0,.12);
+  }
+  .header-mood { font-size: 21px; }
+  .header-read { max-width: 390px; color: #d1cbc6; }
+  h1 { font-size: clamp(26px, 2.5vw, 34px); }
+  h1 span { font-size: .82em; color: var(--wh-gold); }
+
+  .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  .tile { min-height: 104px; display: flex; flex-direction: column; justify-content: center; }
+  .tile:first-child { grid-column: span 2; min-height: 126px; }
+  .tile:first-child .v { font-size: 36px; color: #fff8e7; }
+  .tile:first-child .k { color: #f0dca7; }
+  .tile:nth-child(2) .v { font-size: 31px; }
+  .tile:nth-child(n+3) { background: #15181d; }
+
+  .coach-brief-head { grid-template-columns: 260px minmax(0, 1fr); gap: 28px; }
+  .coach-avatar { width: 260px; height: 260px; border-radius: 14px; border-width: 2px; box-shadow: 0 18px 40px rgba(0,0,0,.38); }
+  .coach-brief-head > div:last-child {
+    min-height: 178px; display: flex; flex-direction: column; justify-content: center;
+    padding: 24px 28px; border-left: 3px solid var(--wh-gold); border-radius: 0 12px 12px 0;
+    background: linear-gradient(105deg, rgba(122,38,58,.22), rgba(255,255,255,.025));
+  }
+  .coach-brief-head h2 { font-size: 22px; margin-bottom: 12px; }
+  .coach-brief-head p { font-size: 14px; color: #d1cbc6; }
+
+  /* ---- remaining dashboard polish ---- */
+  #sideNav {
+    padding: 14px 12px 16px;
+    border: 1px solid rgba(215,185,107,.14);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.008));
+  }
+  .crest { margin: 0 4px 18px; }
+  .navlist { border-left-color: rgba(215,185,107,.18); }
+  .navlist a { padding-top: 7px; padding-bottom: 7px; }
+
+  .filters {
+    margin: 14px 0 18px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255,255,255,.018);
+  }
+  .filters > span:not(.count) { background: transparent; border: 0; padding: 4px 6px; }
+  .filters select { color: var(--text); }
+  .filters .count { color: var(--muted); font-size: 12px; }
+
+  section {
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    box-shadow: 0 9px 25px rgba(0,0,0,.13);
+    background: linear-gradient(145deg, #17191e, #14161b);
+  }
+  section:nth-of-type(even):not(.brief):not(.form-panel) {
+    background: linear-gradient(145deg, #191a20, #15171c);
+  }
+  h2 { font-size: 17px; margin-bottom: 15px; }
+  h2::before { height: 17px; }
+  table { font-size: 13px; }
+  th { padding-bottom: 10px; color: #aeb5bf; }
+  td { padding: 10px 12px; }
+  tbody tr:hover { background: rgba(226,192,80,.045); }
+  .chart-wrap { padding: 4px 2px 8px; }
+  .legend { margin-top: 10px; color: #aeb5bf; }
+  .pitch-wrap { gap: 28px; }
+  .pitch { background: rgba(7,10,14,.32); }
+  .note { background: rgba(255,255,255,.025); border-left-color: var(--wh-gold); }
+  .form-panel { border-top: 2px solid var(--wh-blue); }
+  .brief { border-top: 2px solid var(--wh-gold); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav id="sideNav">
+    <div class="crest">
+      <svg width="30" height="30" viewBox="0 0 30 30">
+        <!-- 웨스트햄 클라레 바탕에 스카이 블루 테두리 -->
+        <circle cx="15" cy="15" r="14" fill="var(--wh-claret)" stroke="var(--wh-blue)" stroke-width="1.8"/>
+        <!-- 웨스트햄 골드 색상의 교차된 망치 -->
+        <text x="15" y="20.5" font-family="Oswald" font-size="15" font-weight="500" fill="var(--wh-gold)" text-anchor="middle">⚒</text>
+      </svg>
+      <span class="cname">시즌 대시보드<b style="font-family: var(--disp); letter-spacing: 0.03em;">WESTHAM UTD</b></span>
+    </div>
+    <ul class="navlist">
+      <li><a href="#tiles"><i class="dot"></i>요약</a></li>
+      <li><a href="#compSection"><i class="dot"></i>대회별 요약</a></li>
+      <li><a href="#commentSection"><i class="dot"></i>이예은 코칭 브리핑</a></li>
+      <li><a href="#venueSection"><i class="dot"></i>홈 · 원정</a></li>
+      <li><a href="#timingSection"><i class="dot"></i>시간대 분포</a></li>
+      <li><a href="#goalsSection"><i class="dot"></i>득점 · 도움</a></li>
+      <li><a href="#xgSection"><i class="dot"></i>xG 흐름</a></li>
+      <li><a href="#playersSection"><i class="dot"></i>선수 평점</a></li>
+      <li><a href="#squadSection"><i class="dot"></i>스쿼드 능력</a></li>
+      <li><a href="#passmapSection"><i class="dot"></i>패스맵</a></li>
+      <li><a href="#tacticSection"><i class="dot"></i>전술 변경</a></li>
+      <li><a href="#hypSection"><i class="dot"></i>가설</a></li>
+      <li><a href="#oppSection"><i class="dot"></i>상대별 전적</a></li>
+      <li><a href="#recordSection"><i class="dot"></i>경기 기록</a></li>
+    </ul>
+    <button id="toTop" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})">맨 위로 ↑</button>
+  </nav>
+
+  <main>
+  <header class="command-header">
+    <div class="title-block">
+      <span class="eyebrow">WESTHAM UNITED · ANALYSIS ROOM</span>
+    <h1>시즌 대시보드 <span id="teamName">웨스트햄</span></h1>
+    <div class="sub" id="range"></div>
+    <div class="teamroom-status"><span class="status-chip" id="seasonState">시즌 진행 중</span><span class="status-chip" id="recordState">경기 기록 대기</span></div>
+    </div>
+    <div class="header-brief">
+      <span class="header-brief-label">Recent mood</span>
+      <div class="header-mood"><i class="mood-mark" id="moodMark"></i><span id="moodLine">팀 흐름을 읽는 중</span></div>
+      <p class="header-read" id="headerRead">최근 경기 데이터가 쌓이면 팀의 현재 분위기와 다음 확인 포인트를 이곳에 요약합니다.</p>
+    </div>
+    <div class="reload">
+      <div class="copy-actions" aria-label="분석 요청 복사 모드">
+        <button class="linkish" type="button" onclick="copyDigest('short')" id="copyShortBtn">짧게 복사</button>
+        <button class="linkish" type="button" onclick="copyDigest('match')" id="copyMatchBtn">경기 분석 복사</button>
+        <button class="linkish" type="button" onclick="copyDigest('full')" id="copyFullBtn">전체 리뷰 복사</button>
+      </div>
+      <label>matches 폴더 다시 읽기
+        <input type="file" id="picker" webkitdirectory directory multiple>
+      </label>
+    </div>
+  </header>
+
+  <div class="filters" id="filterBar">
+    <span id="compWrap">대회 <select id="compSel"></select></span>
+    <span id="seasonWrap">시즌 <select id="seasonSel"></select></span>
+    <span class="count" id="filterCount"></span>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section id="formSection" class="form-panel">
+    <span class="section-label">Season pulse</span>
+    <h2>최근 경기 흐름</h2>
+    <div id="formStrip" class="form-strip"></div>
+    <p id="formCaption" class="form-caption"></p>
+  </section>
+
+  <section id="commentSection" class="brief">
+    <div class="coach-brief-head">
+      <img class="coach-avatar" src="file:///C:/Users/LSH/Documents/Sports%20Interactive/Football%20Manager%2026/Graphics/000.faces/2002078057.png" alt="이예은 코치 프로필">
+      <div>
+        <span class="section-label">Coach Lee Ye-eun · Signature brief</span>
+        <h2>이예은 코치 · 오늘의 코칭 브리핑</h2>
+      </div>
+    </div>
+    <div id="commentBody"></div>
+  </section>
+
+  <section id="compSection">
+    <h2>대회별 요약</h2>
+    <div id="compTable"></div>
+  </section>
+
+  <section id="venueSection">
+    <h2>홈 · 원정</h2>
+    <div id="venueTable"></div>
+  </section>
+
+  <section id="timingSection">
+    <h2>시간대 분포</h2>
+    <div class="chart-wrap"><div id="timingChart"></div></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--accent)"></i>득점</span>
+      <span id="timingNote"></span>
+    </div>
+  </section>
+
+  <section id="goalsSection">
+    <h2>득점 · 도움</h2>
+    <div id="goalsTable"></div>
+  </section>
+
+  <section id="xgSection">
+    <h2>xG 흐름</h2>
+    <div class="chart-wrap"><div id="chart"></div></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--accent)"></i>우리 xG</span>
+      <span><i class="swatch" style="background:var(--loss)"></i>상대 xG</span>
+    </div>
+  </section>
+
+  <section id="playersSection">
+    <h2>선수 평점</h2>
+    <div class="players">
+      <div>
+        <h3>경기별 <select id="matchSel"></select></h3>
+        <div class="lineup" id="lineup"></div>
+      </div>
+      <div>
+        <h3>시즌 평균</h3>
+        <div id="avgTable"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="squadSection">
+    <h2>스쿼드 능력</h2>
+    <h3>스냅샷 <select id="squadSel"></select><span id="squadMeta" style="margin-left:10px"></span></h3>
+    <div id="squadBody"></div>
+  </section>
+
+  <section id="passmapSection">
+    <h2>패스맵</h2>
+    <h3>경기별 <select id="pmSel"></select>
+        <span style="margin-left:12px">기준 <select id="refSel"></select></span></h3>
+    <div class="pitch-wrap">
+      <div id="pitch"></div>
+      <div id="pmNote" class="note"></div>
+    </div>
+  </section>
+
+  <section id="tacticSection">
+    <h2>전술 변경</h2>
+    <div id="tacticBody"></div>
+  </section>
+
+  <section id="hypSection">
+    <h2>가설</h2>
+    <div id="hypBody"></div>
+  </section>
+
+  <section id="oppSection">
+    <h2>상대별 전적</h2>
+    <div id="oppTable"></div>
+  </section>
+
+  <section id="recordSection">
+    <h2>경기 기록</h2>
+    <div id="table"></div>
+  </section>
+  </main>
+</div>
+
+<script>
+/*REFERENCES_START*/
+const REFERENCES = {
+  "_comment": "기준 형태 — 이것은 데이터가 아니라 '모델'입니다. 경기에서 측정된 값이 아니라, 각 역할이 의도대로 작동했을 때 기대되는 평균 위치를 감독이 적어두는 파일입니다. 마음대로 고치세요. 이 파일이 곧 당신의 전술 철학입니다.",
+  "name": "4-2-3-1 기본 의도",
+  "formation": "4-2-3-1",
+  "source": "model",
+  "coords_note": "x 0=왼쪽 터치라인 100=오른쪽, y 0=우리 골라인 100=상대 골라인. passmap 좌표계와 동일.",
+  "slots": [
+    { "role": "BGK", "x": 50, "y": 8,  "note": "볼 플레잉 골키퍼 — 백라인 뒤 커버" },
+    { "role": "BCB", "x": 38, "y": 30, "note": "볼 플레잉 센터백 (좌)" },
+    { "role": "CB",  "x": 62, "y": 30, "note": "센터백 (우)" },
+    { "role": "WB",  "x": 12, "y": 62, "note": "윙백 (좌) — 측면을 높이 점유" },
+    { "role": "FB",  "x": 85, "y": 45, "note": "풀백 (우) — 윙백보다 낮게 균형" },
+    { "role": "DM",  "x": 50, "y": 42, "note": "수비형 미드필더 — 백라인 앞 차단" },
+    { "role": "DLP", "x": 38, "y": 52, "note": "딥라잉 플레이메이커 — 배급 기점" },
+    { "role": "IF",  "x": 22, "y": 72, "note": "인사이드 포워드 (좌) — 안쪽으로 접어들어감" },
+    { "role": "SS",  "x": 52, "y": 72, "note": "세컨드 스트라이커 — 최전방 뒤 공간" },
+    { "role": "WFD", "x": 88, "y": 70, "note": "와이드 포워드 (우) — 측면 최전방" },
+    { "role": "DLF", "x": 50, "y": 85, "note": "딥라잉 포워드 — 내려받더라도 최전방 기준선" }
+  ]
+};
+/*REFERENCES_END*/
+/*SQUAD_START*/
+const SQUAD = [];
+/*SQUAD_END*/
+/*ATTRIBUTES_START*/
+const ATTRIBUTES = {
+    "updated":  "2026-08-04",
+    "source_file":  "squad/선수_능력치_기록표.csv",
+    "note":  "감독이 직접 입력한 CSV. 빈 칸은 기록 없음으로 처리한다.",
+    "players":  {
+                    "재러드 보언":  {
+                                   "포지션":  [
+                                               "ST",
+                                               "AML",
+                                               "AMR"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "6칸",
+                                             "오른발":  "3칸"
+                                         },
+                                   "특성":  [
+                                              "정확한 슛 선호",
+                                              "공을 자주 드리블",
+                                              "오른쪽 측면에서 중앙으로 침투"
+                                          ],
+                                   "기술":  {
+                                              "개인기":  15,
+                                              "골결":  15,
+                                              "드리블":  14,
+                                              "일대일":  5,
+                                              "중거리":  15,
+                                              "크로스":  13,
+                                              "태클":  8,
+                                              "패스":  14,
+                                              "퍼스트터치":  14,
+                                              "헤더":  10
+                                          },
+                                   "정신":  {
+                                              "대담":  8,
+                                              "리더십":  13,
+                                              "수비위치":  8,
+                                              "승부욕":  17,
+                                              "시야":  13,
+                                              "예측":  15,
+                                              "오프더볼":  15,
+                                              "적극":  10,
+                                              "집중":  11,
+                                              "천재":  15,
+                                              "침착":  15,
+                                              "팀워크":  15,
+                                              "판단":  15,
+                                              "활동량":  17
+                                          },
+                                   "신체":  {
+                                              "가속":  15,
+                                              "균형":  13,
+                                              "몸싸움":  8,
+                                              "민첩":  15,
+                                              "점프":  8,
+                                              "주력":  14,
+                                              "지구력":  15,
+                                              "체력":  14
+                                          }
+                               },
+                    "크리센시오 서머빌":  {
+                                      "포지션":  [
+                                                  "AML",
+                                                  "AMR"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "4칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "휘어차는 슛 선호",
+                                                 "2대1패스 선호",
+                                                 "공을 자주 드리블",
+                                                 "왼쪽 측면에서 중앙으로 침투"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  15,
+                                                 "골결":  11,
+                                                 "드리블":  17,
+                                                 "일대일":  4,
+                                                 "중거리":  14,
+                                                 "크로스":  11,
+                                                 "태클":  5,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  15,
+                                                 "헤더":  5
+                                             },
+                                      "정신":  {
+                                                 "대담":  9,
+                                                 "리더십":  5,
+                                                 "수비위치":  4,
+                                                 "승부욕":  13,
+                                                 "시야":  11,
+                                                 "예측":  13,
+                                                 "오프더볼":  13,
+                                                 "적극":  7,
+                                                 "집중":  8,
+                                                 "천재":  15,
+                                                 "침착":  13,
+                                                 "팀워크":  10,
+                                                 "판단":  10,
+                                                 "활동량":  12
+                                             },
+                                      "신체":  {
+                                                 "가속":  18,
+                                                 "균형":  15,
+                                                 "몸싸움":  5,
+                                                 "민첩":  17,
+                                                 "점프":  5,
+                                                 "주력":  17,
+                                                 "지구력":  13,
+                                                 "체력":  12
+                                             }
+                                  },
+                    "발렌틴 카스테야노스":  {
+                                       "포지션":  [
+                                                   "ST"
+                                               ],
+                                       "발":  {
+                                                 "왼발":  "3칸",
+                                                 "오른발":  "6칸"
+                                             },
+                                       "특성":  [
+                                                  "오버헤드킥을 시도"
+                                              ],
+                                       "기술":  {
+                                                  "개인기":  15,
+                                                  "골결":  14,
+                                                  "드리블":  12,
+                                                  "일대일":  4,
+                                                  "중거리":  12,
+                                                  "크로스":  10,
+                                                  "태클":  7,
+                                                  "패스":  13,
+                                                  "퍼스트터치":  14,
+                                                  "헤더":  18
+                                              },
+                                       "정신":  {
+                                                  "대담":  15,
+                                                  "리더십":  10,
+                                                  "수비위치":  8,
+                                                  "승부욕":  18,
+                                                  "시야":  13,
+                                                  "예측":  16,
+                                                  "오프더볼":  15,
+                                                  "적극":  17,
+                                                  "집중":  12,
+                                                  "천재":  14,
+                                                  "침착":  12,
+                                                  "팀워크":  17,
+                                                  "판단":  13,
+                                                  "활동량":  15
+                                              },
+                                       "신체":  {
+                                                  "가속":  14,
+                                                  "균형":  16,
+                                                  "몸싸움":  13,
+                                                  "민첩":  5,
+                                                  "점프":  13,
+                                                  "주력":  13,
+                                                  "지구력":  13,
+                                                  "체력":  15
+                                              }
+                                   },
+                    "마테우스 페르난데스":  {
+                                       "포지션":  [
+                                                   "AMC",
+                                                   "MC"
+                                               ],
+                                       "발":  {
+                                                 "왼발":  "3칸",
+                                                 "오른발":  "6칸"
+                                             },
+                                       "특성":  [
+
+                                              ],
+                                       "기술":  {
+                                                  "개인기":  16,
+                                                  "골결":  10,
+                                                  "드리블":  14,
+                                                  "일대일":  10,
+                                                  "중거리":  10,
+                                                  "크로스":  11,
+                                                  "태클":  14,
+                                                  "패스":  15,
+                                                  "퍼스트터치":  15,
+                                                  "헤더":  9
+                                              },
+                                       "정신":  {
+                                                  "대담":  11,
+                                                  "리더십":  11,
+                                                  "수비위치":  11,
+                                                  "승부욕":  15,
+                                                  "시야":  14,
+                                                  "예측":  14,
+                                                  "오프더볼":  13,
+                                                  "적극":  14,
+                                                  "집중":  16,
+                                                  "천재":  14,
+                                                  "침착":  15,
+                                                  "팀워크":  16,
+                                                  "판단":  14,
+                                                  "활동량":  16
+                                              },
+                                       "신체":  {
+                                                  "가속":  12,
+                                                  "균형":  14,
+                                                  "몸싸움":  12,
+                                                  "민첩":  13,
+                                                  "점프":  8,
+                                                  "주력":  12,
+                                                  "지구력":  14,
+                                                  "체력":  15
+                                              }
+                                   },
+                    "토마시 소우체크":  {
+                                     "포지션":  [
+                                                 "MC",
+                                                 "DM"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "3칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "가능할 때마다 최전방으로 침투 선호",
+                                                "짧고 간단한 패스 선호",
+                                                "필요 시 상대 페널티 박스에 한 박자 늦게 침투하는 것을 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  10,
+                                                "골결":  14,
+                                                "드리블":  10,
+                                                "일대일":  14,
+                                                "중거리":  12,
+                                                "크로스":  8,
+                                                "태클":  15,
+                                                "패스":  9,
+                                                "퍼스트터치":  9,
+                                                "헤더":  18
+                                            },
+                                     "정신":  {
+                                                "대담":  17,
+                                                "리더십":  13,
+                                                "수비위치":  15,
+                                                "승부욕":  16,
+                                                "시야":  9,
+                                                "예측":  14,
+                                                "오프더볼":  14,
+                                                "적극":  15,
+                                                "집중":  15,
+                                                "천재":  5,
+                                                "침착":  15,
+                                                "팀워크":  17,
+                                                "판단":  15,
+                                                "활동량":  18
+                                            },
+                                     "신체":  {
+                                                "가속":  11,
+                                                "균형":  15,
+                                                "몸싸움":  16,
+                                                "민첩":  9,
+                                                "점프":  17,
+                                                "주력":  11,
+                                                "지구력":  18,
+                                                "체력":  18
+                                            }
+                                 },
+                    "숭궁투 마가사":  {
+                                    "포지션":  [
+                                                "MC",
+                                                "DM",
+                                                "DC"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "3칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  11,
+                                               "골결":  7,
+                                               "드리블":  10,
+                                               "일대일":  14,
+                                               "중거리":  11,
+                                               "크로스":  11,
+                                               "태클":  14,
+                                               "패스":  13,
+                                               "퍼스트터치":  12,
+                                               "헤더":  14
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  10,
+                                               "수비위치":  13,
+                                               "승부욕":  13,
+                                               "시야":  12,
+                                               "예측":  13,
+                                               "오프더볼":  12,
+                                               "적극":  14,
+                                               "집중":  12,
+                                               "천재":  10,
+                                               "침착":  12,
+                                               "팀워크":  14,
+                                               "판단":  12,
+                                               "활동량":  13
+                                           },
+                                    "신체":  {
+                                               "가속":  12,
+                                               "균형":  13,
+                                               "몸싸움":  14,
+                                               "민첩":  13,
+                                               "점프":  14,
+                                               "주력":  12,
+                                               "지구력":  15,
+                                               "체력":  13
+                                           }
+                                },
+                    "엘 하지 말리크 디우프":  {
+                                         "포지션":  [
+                                                     "DL"
+                                                 ],
+                                         "발":  {
+                                                   "왼발":  "6칸",
+                                                   "오른발":  "2칸"
+                                               },
+                                         "특성":  [
+                                                    "약한 발을 사용하지 않는 것을 선호",
+                                                    "슬라이딩 태클 선호"
+                                                ],
+                                         "기술":  {
+                                                    "개인기":  13,
+                                                    "골결":  11,
+                                                    "드리블":  13,
+                                                    "일대일":  13,
+                                                    "중거리":  9,
+                                                    "크로스":  16,
+                                                    "태클":  14,
+                                                    "패스":  13,
+                                                    "퍼스트터치":  13,
+                                                    "헤더":  12
+                                                },
+                                         "정신":  {
+                                                    "대담":  15,
+                                                    "리더십":  5,
+                                                    "수비위치":  11,
+                                                    "승부욕":  14,
+                                                    "시야":  12,
+                                                    "예측":  13,
+                                                    "오프더볼":  11,
+                                                    "적극":  16,
+                                                    "집중":  11,
+                                                    "천재":  13,
+                                                    "침착":  11,
+                                                    "팀워크":  13,
+                                                    "판단":  11,
+                                                    "활동량":  14
+                                                },
+                                         "신체":  {
+                                                    "가속":  16,
+                                                    "균형":  13,
+                                                    "몸싸움":  13,
+                                                    "민첩":  13,
+                                                    "점프":  12,
+                                                    "주력":  15,
+                                                    "지구력":  14,
+                                                    "체력":  17
+                                                }
+                                     },
+                    "맥스 킬먼":  {
+                                  "포지션":  [
+                                              "DC"
+                                          ],
+                                  "발":  {
+                                            "왼발":  "6칸",
+                                            "오른발":  "4칸"
+                                        },
+                                  "특성":  [
+                                             "수비 진영에서 드리블하기"
+                                         ],
+                                  "기술":  {
+                                             "개인기":  14,
+                                             "골결":  6,
+                                             "드리블":  13,
+                                             "일대일":  14,
+                                             "중거리":  7,
+                                             "크로스":  11,
+                                             "태클":  14,
+                                             "패스":  14,
+                                             "퍼스트터치":  13,
+                                             "헤더":  12
+                                         },
+                                  "정신":  {
+                                             "대담":  9,
+                                             "리더십":  6,
+                                             "수비위치":  14,
+                                             "승부욕":  15,
+                                             "시야":  13,
+                                             "예측":  13,
+                                             "오프더볼":  11,
+                                             "적극":  7,
+                                             "집중":  12,
+                                             "천재":  11,
+                                             "침착":  13,
+                                             "팀워크":  12,
+                                             "판단":  12,
+                                             "활동량":  12
+                                         },
+                                  "신체":  {
+                                             "가속":  13,
+                                             "균형":  13,
+                                             "몸싸움":  14,
+                                             "민첩":  13,
+                                             "점프":  15,
+                                             "주력":  14,
+                                             "지구력":  13,
+                                             "체력":  11
+                                         }
+                              },
+                    "장 클레르 토디보":  {
+                                      "포지션":  [
+                                                  "DC"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "3칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "위기 상황을 벗어나기 위해 개인기를 자주 시도",
+                                                 "슬라이딩 태클을 하지 않는 것을 선호",
+                                                 "수비 진영에서 드리블하기"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  13,
+                                                 "골결":  8,
+                                                 "드리블":  12,
+                                                 "일대일":  15,
+                                                 "중거리":  8,
+                                                 "크로스":  5,
+                                                 "태클":  15,
+                                                 "패스":  14,
+                                                 "퍼스트터치":  13,
+                                                 "헤더":  14
+                                             },
+                                      "정신":  {
+                                                 "대담":  14,
+                                                 "리더십":  11,
+                                                 "수비위치":  14,
+                                                 "승부욕":  15,
+                                                 "시야":  12,
+                                                 "예측":  15,
+                                                 "오프더볼":  7,
+                                                 "적극":  14,
+                                                 "집중":  14,
+                                                 "천재":  11,
+                                                 "침착":  14,
+                                                 "팀워크":  14,
+                                                 "판단":  11,
+                                                 "활동량":  12
+                                             },
+                                      "신체":  {
+                                                 "가속":  14,
+                                                 "균형":  13,
+                                                 "몸싸움":  16,
+                                                 "민첩":  12,
+                                                 "점프":  15,
+                                                 "주력":  15,
+                                                 "지구력":  14,
+                                                 "체력":  17
+                                             }
+                                  },
+                    "에런 완 비사카":  {
+                                     "포지션":  [
+                                                 "DR"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "2칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "슬라이딩 태클 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  11,
+                                                "골결":  7,
+                                                "드리블":  13,
+                                                "일대일":  12,
+                                                "중거리":  5,
+                                                "크로스":  11,
+                                                "태클":  19,
+                                                "패스":  11,
+                                                "퍼스트터치":  12,
+                                                "헤더":  8
+                                            },
+                                     "정신":  {
+                                                "대담":  17,
+                                                "리더십":  6,
+                                                "수비위치":  13,
+                                                "승부욕":  10,
+                                                "시야":  6,
+                                                "예측":  12,
+                                                "오프더볼":  12,
+                                                "적극":  15,
+                                                "집중":  12,
+                                                "천재":  12,
+                                                "침착":  12,
+                                                "팀워크":  16,
+                                                "판단":  12,
+                                                "활동량":  13
+                                            },
+                                     "신체":  {
+                                                "가속":  16,
+                                                "균형":  15,
+                                                "몸싸움":  13,
+                                                "민첩":  18,
+                                                "점프":  10,
+                                                "주력":  15,
+                                                "지구력":  15,
+                                                "체력":  15
+                                            }
+                                 },
+                    "코스타스 졸라키스":  {
+                                      "포지션":  [
+                                                  "GK"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "2칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  10,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  8
+                                             },
+                                      "정신":  {
+                                                 "대담":  14,
+                                                 "리더십":  10,
+                                                 "수비위치":  14,
+                                                 "승부욕":  15,
+                                                 "시야":  11,
+                                                 "예측":  14,
+                                                 "오프더볼":  3,
+                                                 "적극":  9,
+                                                 "집중":  11,
+                                                 "천재":  6,
+                                                 "침착":  12,
+                                                 "팀워크":  14,
+                                                 "판단":  13,
+                                                 "활동량":  10
+                                             },
+                                      "신체":  {
+                                                 "가속":  10,
+                                                 "균형":  8,
+                                                 "몸싸움":  12,
+                                                 "민첩":  15,
+                                                 "점프":  15,
+                                                 "주력":  13,
+                                                 "지구력":  12,
+                                                 "체력":  15
+                                             },
+                                      "골키퍼":  true
+                                  },
+                    "매스 헤어만센":  {
+                                    "포지션":  [
+                                                "GK"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "3칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  13,
+                                               "패스":  12,
+                                               "퍼스트터치":  12
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  11,
+                                               "수비위치":  13,
+                                               "승부욕":  12,
+                                               "시야":  12,
+                                               "예측":  13,
+                                               "오프더볼":  3,
+                                               "적극":  12,
+                                               "집중":  13,
+                                               "천재":  11,
+                                               "침착":  14,
+                                               "팀워크":  15,
+                                               "판단":  12,
+                                               "활동량":  12
+                                           },
+                                    "신체":  {
+                                               "가속":  12,
+                                               "균형":  12,
+                                               "몸싸움":  12,
+                                               "민첩":  14,
+                                               "점프":  14,
+                                               "주력":  11,
+                                               "지구력":  12,
+                                               "체력":  11
+                                           },
+                                    "골키퍼":  true
+                                },
+                    "카일 워커 피터스":  {
+                                      "포지션":  [
+                                                  "DL",
+                                                  "DR"
+                                              ],
+                                      "발":  {
+                                                "왼발":  "4칸",
+                                                "오른발":  "6칸"
+                                            },
+                                      "특성":  [
+                                                 "오른쪽 측면 돌파 선호",
+                                                 "가능할 때마다 최전방으로 침투 선호"
+                                             ],
+                                      "기술":  {
+                                                 "개인기":  13,
+                                                 "골결":  10,
+                                                 "드리블":  15,
+                                                 "일대일":  11,
+                                                 "중거리":  8,
+                                                 "크로스":  13,
+                                                 "태클":  14,
+                                                 "패스":  12,
+                                                 "퍼스트터치":  14,
+                                                 "헤더":  8
+                                             },
+                                      "정신":  {
+                                                 "대담":  12,
+                                                 "리더십":  8,
+                                                 "수비위치":  13,
+                                                 "승부욕":  14,
+                                                 "시야":  12,
+                                                 "예측":  12,
+                                                 "오프더볼":  14,
+                                                 "적극":  12,
+                                                 "집중":  11,
+                                                 "천재":  11,
+                                                 "침착":  13,
+                                                 "팀워크":  15,
+                                                 "판단":  12,
+                                                 "활동량":  15
+                                             },
+                                      "신체":  {
+                                                 "가속":  14,
+                                                 "균형":  14,
+                                                 "몸싸움":  10,
+                                                 "민첩":  13,
+                                                 "점프":  6,
+                                                 "주력":  14,
+                                                 "지구력":  16,
+                                                 "체력":  18
+                                             }
+                                  },
+                    "파블루":  {
+                                "포지션":  [
+                                            "ST"
+                                        ],
+                                "발":  {
+                                          "왼발":  "3칸",
+                                          "오른발":  "6칸"
+                                      },
+                                "특성":  [
+                                           "패스를 발밑으로 받는 것을 선호"
+                                       ],
+                                "기술":  {
+                                           "개인기":  12,
+                                           "골결":  14,
+                                           "드리블":  12,
+                                           "일대일":  9,
+                                           "중거리":  12,
+                                           "크로스":  8,
+                                           "태클":  13,
+                                           "패스":  11,
+                                           "퍼스트터치":  12,
+                                           "헤더":  13
+                                       },
+                                "정신":  {
+                                           "대담":  16,
+                                           "리더십":  11,
+                                           "수비위치":  10,
+                                           "승부욕":  18,
+                                           "시야":  10,
+                                           "예측":  15,
+                                           "오프더볼":  12,
+                                           "적극":  19,
+                                           "집중":  12,
+                                           "천재":  12,
+                                           "침착":  15,
+                                           "팀워크":  14,
+                                           "판단":  13,
+                                           "활동량":  17
+                                       },
+                                "신체":  {
+                                           "가속":  12,
+                                           "균형":  16,
+                                           "몸싸움":  14,
+                                           "민첩":  12,
+                                           "점프":  13,
+                                           "주력":  13,
+                                           "지구력":  14,
+                                           "체력":  16
+                                       }
+                            },
+                    "아다마 트라오레":  {
+                                     "포지션":  [
+                                                 "AR"
+                                             ],
+                                     "발":  {
+                                               "왼발":  "3칸",
+                                               "오른발":  "6칸"
+                                           },
+                                     "특성":  [
+                                                "오른쪽 측면 돌파 선호",
+                                                "공을 차놓고 상대를 제치는 것을 선호",
+                                                "현란한 개인기를 자주 시도",
+                                                "패스를 발밑으로 받는 것을 선호"
+                                            ],
+                                     "기술":  {
+                                                "개인기":  12,
+                                                "골결":  11,
+                                                "드리블":  18,
+                                                "일대일":  7,
+                                                "중거리":  11,
+                                                "크로스":  12,
+                                                "태클":  7,
+                                                "패스":  11,
+                                                "퍼스트터치":  10,
+                                                "헤더":  10
+                                            },
+                                     "정신":  {
+                                                "대담":  11,
+                                                "리더십":  5,
+                                                "수비위치":  10,
+                                                "승부욕":  14,
+                                                "시야":  8,
+                                                "예측":  9,
+                                                "오프더볼":  9,
+                                                "적극":  12,
+                                                "집중":  8,
+                                                "천재":  18,
+                                                "침착":  10,
+                                                "팀워크":  9,
+                                                "판단":  6,
+                                                "활동량":  9
+                                            },
+                                     "신체":  {
+                                                "가속":  19,
+                                                "균형":  14,
+                                                "몸싸움":  17,
+                                                "민첩":  14,
+                                                "점프":  14,
+                                                "주력":  19,
+                                                "지구력":  10,
+                                                "체력":  12
+                                            }
+                                 },
+                    "악셀 디사시":  {
+                                   "포지션":  [
+                                               "DC",
+                                               "DR"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "3칸",
+                                             "오른발":  "6칸"
+                                         },
+                                   "특성":  [
+
+                                          ],
+                                   "기술":  {
+                                              "개인기":  12,
+                                              "골결":  6,
+                                              "드리블":  8,
+                                              "일대일":  14,
+                                              "중거리":  8,
+                                              "크로스":  6,
+                                              "태클":  15,
+                                              "패스":  12,
+                                              "퍼스트터치":  12,
+                                              "헤더":  16
+                                          },
+                                   "정신":  {
+                                              "대담":  5,
+                                              "리더십":  13,
+                                              "수비위치":  13,
+                                              "승부욕":  14,
+                                              "시야":  11,
+                                              "예측":  14,
+                                              "오프더볼":  11,
+                                              "적극":  13,
+                                              "집중":  13,
+                                              "천재":  6,
+                                              "침착":  13,
+                                              "팀워크":  13,
+                                              "판단":  13,
+                                              "활동량":  14
+                                          },
+                                   "신체":  {
+                                              "가속":  14,
+                                              "균형":  17,
+                                              "몸싸움":  18,
+                                              "민첩":  12,
+                                              "점프":  16,
+                                              "주력":  15,
+                                              "지구력":  16,
+                                              "체력":  15
+                                          }
+                               },
+                    "프레디 포츠":  {
+                                   "포지션":  [
+                                               "MC",
+                                               "DM"
+                                           ],
+                                   "발":  {
+                                             "왼발":  "3칸",
+                                             "오른발":  "6칸"
+                                         },
+                                   "특성":  [
+
+                                          ],
+                                   "기술":  {
+                                              "개인기":  13,
+                                              "골결":  8,
+                                              "드리블":  7,
+                                              "일대일":  13,
+                                              "중거리":  8,
+                                              "크로스":  6,
+                                              "태클":  14,
+                                              "패스":  14,
+                                              "퍼스트터치":  12,
+                                              "헤더":  12
+                                          },
+                                   "정신":  {
+                                              "대담":  10,
+                                              "리더십":  9,
+                                              "수비위치":  14,
+                                              "승부욕":  15,
+                                              "시야":  11,
+                                              "예측":  13,
+                                              "오프더볼":  11,
+                                              "적극":  12,
+                                              "집중":  14,
+                                              "천재":  6,
+                                              "침착":  13,
+                                              "팀워크":  13,
+                                              "판단":  13,
+                                              "활동량":  15
+                                          },
+                                   "신체":  {
+                                              "가속":  11,
+                                              "균형":  12,
+                                              "몸싸움":  13,
+                                              "민첩":  12,
+                                              "점프":  13,
+                                              "주력":  13,
+                                              "지구력":  16,
+                                              "체력":  16
+                                          }
+                               },
+                    "올리버 스칼스":  {
+                                    "포지션":  [
+                                                "DM",
+                                                "DL"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "6칸",
+                                              "오른발":  "3칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  13,
+                                               "골결":  11,
+                                               "드리블":  12,
+                                               "일대일":  13,
+                                               "중거리":  7,
+                                               "크로스":  12,
+                                               "태클":  13,
+                                               "패스":  13,
+                                               "퍼스트터치":  11,
+                                               "헤더":  6
+                                           },
+                                    "정신":  {
+                                               "대담":  12,
+                                               "리더십":  2,
+                                               "수비위치":  13,
+                                               "승부욕":  13,
+                                               "시야":  12,
+                                               "예측":  12,
+                                               "오프더볼":  12,
+                                               "적극":  10,
+                                               "집중":  11,
+                                               "천재":  8,
+                                               "침착":  13,
+                                               "팀워크":  13,
+                                               "판단":  13,
+                                               "활동량":  13
+                                           },
+                                    "신체":  {
+                                               "가속":  13,
+                                               "균형":  13,
+                                               "몸싸움":  10,
+                                               "민첩":  13,
+                                               "점프":  13,
+                                               "주력":  13,
+                                               "지구력":  14,
+                                               "체력":  13
+                                           }
+                                },
+                    "모하마두 캉테":  {
+                                    "포지션":  [
+                                                "AMC",
+                                                "MC"
+                                            ],
+                                    "발":  {
+                                              "왼발":  "2칸",
+                                              "오른발":  "6칸"
+                                          },
+                                    "특성":  [
+
+                                           ],
+                                    "기술":  {
+                                               "개인기":  12,
+                                               "골결":  12,
+                                               "드리블":  12,
+                                               "일대일":  13,
+                                               "중거리":  12,
+                                               "크로스":  7,
+                                               "태클":  8,
+                                               "패스":  13,
+                                               "퍼스트터치":  12,
+                                               "헤더":  8
+                                           },
+                                    "정신":  {
+                                               "대담":  6,
+                                               "리더십":  12,
+                                               "수비위치":  12,
+                                               "승부욕":  15,
+                                               "시야":  13,
+                                               "예측":  12,
+                                               "오프더볼":  13,
+                                               "적극":  14,
+                                               "집중":  12,
+                                               "천재":  5,
+                                               "침착":  9,
+                                               "팀워크":  12,
+                                               "판단":  12,
+                                               "활동량":  15
+                                           },
+                                    "신체":  {
+                                               "가속":  13,
+                                               "균형":  13,
+                                               "몸싸움":  13,
+                                               "민첩":  12,
+                                               "점프":  9,
+                                               "주력":  13,
+                                               "지구력":  13,
+                                               "체력":  15
+                                           }
+                                },
+                    "콘스탄티노스 마브로파노스":  {
+                                          "포지션":  [
+                                                      "CB",
+                                                      "RB"
+                                                  ],
+                                          "발":  {
+                                                    "왼발":  "3칸",
+                                                    "오른발":  "6칸"
+                                                },
+                                          "특성":  [
+                                                     "긴 패스를 자주 시도",
+                                                     "수비 진영에서 드리블하기"
+                                                 ],
+                                          "기술":  {
+                                                     "개인기":  12,
+                                                     "골결":  7,
+                                                     "드리블":  12,
+                                                     "일대일":  13,
+                                                     "중거리":  11,
+                                                     "크로스":  8,
+                                                     "태클":  15,
+                                                     "패스":  13,
+                                                     "퍼스트터치":  11,
+                                                     "헤더":  15
+                                                 },
+                                          "정신":  {
+                                                     "대담":  14,
+                                                     "리더십":  12,
+                                                     "수비위치":  12,
+                                                     "승부욕":  18,
+                                                     "시야":  12,
+                                                     "예측":  13,
+                                                     "오프더볼":  10,
+                                                     "적극":  10,
+                                                     "집중":  10,
+                                                     "천재":  12,
+                                                     "침착":  12,
+                                                     "팀워크":  12,
+                                                     "판단":  10,
+                                                     "활동량":  17
+                                                 },
+                                          "신체":  {
+                                                     "가속":  13,
+                                                     "균형":  15,
+                                                     "몸싸움":  16,
+                                                     "민첩":  11,
+                                                     "점프":  16,
+                                                     "주력":  15,
+                                                     "지구력":  12,
+                                                     "체력":  13
+                                                 }
+                                      }
+                }
+};
+/*ATTRIBUTES_END*/
+/*HYP_START*/
+const HYPOTHESES = [];
+/*HYP_END*/
+/*TACTIC_START*/
+const TACTICS = [];
+/*TACTIC_END*/
+/*RULES_START*/
+const COMMENT_RULES = {
+  "_comment": "자동 코멘트 규칙. 임계값은 이 도구가 정한 모델이지 게임에서 온 값이 아니다. reference-shape.json·star-scale.json 과 같은 성격이니 마음대로 고치세요.",
+  "_how": "on 을 false 로 하면 그 규칙은 꺼진다. priority 가 높은 순으로 max_per_match 개까지만 표시된다. text 의 {중괄호}는 실제 수치로 치환된다.",
+  "max_per_match": 3,
+
+  "rules": {
+    "high_poss_low_xg": {
+      "on": true, "priority": 95, "possession": 55, "xg": 1.0,
+      "text": "감독님, 점유율 {poss}%로 공은 잡았는데 xG가 {xg}에 그쳤어요. 박스 안 침투부터 봐야 합니다."
+    },
+    "shots_deficit": {
+      "on": true, "priority": 90, "ratio": 0.5,
+      "text": "슈팅 {shots}대 {oshots}로 밀렸어요. 결과보다 이쪽이 더 찜찜합니다."
+    },
+    "low_sot_ratio": {
+      "on": true, "priority": 75, "min_shots": 10, "ratio": 0.3,
+      "text": "슈팅 {shots}개 중 유효 {sot}개({pct}%). 슈팅 선택이 거칠었어요. 다음엔 골문 안쪽부터 봐야 합니다."
+    },
+    "xg_underperform": {
+      "on": true, "priority": 70, "gap": 1.0,
+      "text": "xG {xg}에 실제 {goals}골. 만들어낸 기회를 놓쳤어요. 이건 마무리 문제입니다."
+    },
+    "xg_overperform": {
+      "on": true, "priority": 40, "gap": 1.0,
+      "text": "xG {xg}에 실제 {goals}골. 오늘은 마무리가 제대로 터졌어요. 다만 매번 기대하진 맙시다."
+    },
+    "corners_against": {
+      "on": true, "priority": 60, "count": 8,
+      "text": "코너킥 {n}개를 내줬어요. 세트피스 수비는 다음 경기에서 바로 점검해야 합니다."
+    },
+    "front_too_deep": {
+      "on": true, "priority": 80, "y": 60,
+      "text": "가장 높이 선 선수가 핏치 {y}% 지점이에요. 최전방이 너무 내려와 공격이 짧아졌습니다."
+    },
+    "isolated_players": {
+      "on": true, "priority": 80,
+      "text": "{names}의 연결이 끊겼어요. 빌드업에서 이 선수들이 고립됐습니다."
+    },
+    "clean_sheet": {
+      "on": true, "priority": 30,
+      "text": "무실점. 피xG {oxg}를 버텨냈어요. 이런 날은 수비가 칭찬받아야죠."
+    }
+  }
+};
+/*RULES_END*/
+// coach.md의 화면용 축약 설정: 당차고 친근하게, 결론부터 짧게 말합니다.
+const COACH_VOICE = {
+  address: '감독님',
+  maxSentences: 3,
+  emptyClaim: '아직 첫 경기 전이에요',
+  emptyText: '경기 기록이 없습니다.'
+};
+/*SHAPES_START*/
+const SHAPES = [];
+/*SHAPES_END*/
+/*DATA_START*/
+const MATCHES = [
+{
+    "date":  "2025-08-16",
+    "season":  "2025/26",
+    "competition":  "프리미어 리그",
+    "opponent":  "선덜랜드",
+    "venue":  "away",
+    "opponent_formation":  "4-4-2",
+    "formation":  "4-2-3-1",
+    "score":  {
+                  "us":  4,
+                  "them":  1
+              },
+    "team_stats":  {
+                       "us":  {
+                                  "xg":  3.86,
+                                  "shots":  24,
+                                  "shots_on_target":  10,
+                                  "possession":  54,
+                                  "corners":  8,
+                                  "clear_cut_chances":  4
+                              },
+                       "them":  {
+                                    "xg":  1.38,
+                                    "shots":  14,
+                                    "shots_on_target":  3,
+                                    "possession":  46,
+                                    "corners":  3,
+                                    "clear_cut_chances":  2
+                                }
+                   },
+    "scorers":  [
+                    {
+                        "scorer":  "발렌틴 카스테야노스",
+                        "minute":  21,
+                        "assist":  "재러드 보언"
+                    },
+                    {
+                        "scorer":  "재러드 보언",
+                        "minute":  59,
+                        "assist":  "에런 완 비사카"
+                    },
+                    {
+                        "scorer":  "발렌틴 카스테야노스",
+                        "minute":  76
+                    },
+                    {
+                        "scorer":  "발렌틴 카스테야노스",
+                        "minute":  90,
+                        "assist":  "아다마 트라오레"
+                    }
+                ],
+    "players":  [
+                    {
+                        "name":  "발렌틴 카스테야노스",
+                        "role":  "P",
+                        "rating":  9.1
+                    },
+                    {
+                        "name":  "크리센시오 서머빌",
+                        "role":  "WFD",
+                        "rating":  7.4
+                    },
+                    {
+                        "name":  "마테우스 페르난데스",
+                        "role":  "AP",
+                        "rating":  7.0
+                    },
+                    {
+                        "name":  "재러드 보언",
+                        "role":  "IF",
+                        "rating":  8.6
+                    },
+                    {
+                        "name":  "토마시 소우체크",
+                        "role":  "BBM",
+                        "rating":  7.0
+                    },
+                    {
+                        "name":  "숭궁투 마가사",
+                        "role":  "HB",
+                        "rating":  6.6
+                    },
+                    {
+                        "name":  "엘 하지 말리크 디우프",
+                        "role":  "FB",
+                        "rating":  7.2
+                    },
+                    {
+                        "name":  "맥스 킬먼",
+                        "role":  "BCB",
+                        "rating":  6.8
+                    },
+                    {
+                        "name":  "장 클레르 토디보",
+                        "role":  "CB",
+                        "rating":  6.7
+                    },
+                    {
+                        "name":  "에런 완 비사카",
+                        "role":  "WB",
+                        "rating":  7.2
+                    },
+                    {
+                        "name":  "코스타스 졸라키스",
+                        "role":  "BGK",
+                        "rating":  6.7
+                    }
+                ],
+    "motm":  {
+                 "name":  "발렌틴 카스테야노스",
+                 "rating":  9.08
+             },
+    "notes":  "",
+    "uncertain":  [
+
+                  ]
+}
+];
+/*DATA_END*/
+
+// ---- 필터 (대회 / 시즌) --------------------------------------------------
+let DATA = [];          // 전체 경기
+let COMP_CONTEXT = [];  // 시즌 필터만 적용한 집합 — 대회별 요약은 이걸 본다
+let SHOWN = [];         // 현재 화면에 보이는 집합 — 분석 요청 복사가 이걸 쓴다
+let FILTER_LABEL = '전체';
+const ALL = '__ALL__';
+const compOf = m => m.competition || '미분류';
+const seasonOf = m => m.season || '미분류';
+
+function setData(arr) {
+  DATA = Array.isArray(arr) ? arr : [];
+  const uniq = f => [...new Set(DATA.map(f))].sort();
+  const comps = uniq(compOf), seasons = uniq(seasonOf);
+  const fill = (el, vals, keep) => {
+    el.innerHTML = `<option value="${ALL}">전체</option>` +
+      vals.map(v => `<option value="${v}">${v}</option>`).join('');
+    el.value = vals.includes(keep) ? keep : ALL;
+  };
+  const compSel = document.getElementById('compSel'), seasonSel = document.getElementById('seasonSel');
+  fill(compSel, comps, compSel.value);
+  fill(seasonSel, seasons, seasonSel.value);
+  document.getElementById('compWrap').style.display = comps.length > 1 ? '' : 'none';
+  document.getElementById('seasonWrap').style.display = seasons.length > 1 ? '' : 'none';
+  document.getElementById('filterBar').style.display =
+    (comps.length > 1 || seasons.length > 1) ? '' : 'none';
+  compSel.onchange = seasonSel.onchange = applyFilters;
+  applyFilters();
+  renderSquad(DATA);
+}
+
+function applyFilters() {
+  const c = document.getElementById('compSel').value || ALL;
+  const s = document.getElementById('seasonSel').value || ALL;
+  COMP_CONTEXT = DATA.filter(m => s === ALL || seasonOf(m) === s);
+  const shown = COMP_CONTEXT.filter(m => c === ALL || compOf(m) === c);
+  SHOWN = shown;
+  FILTER_LABEL = [c === ALL ? null : c, s === ALL ? null : s].filter(Boolean).join(' · ') || '전체';
+  document.getElementById('filterCount').textContent =
+    shown.length === DATA.length ? `전체 ${DATA.length}경기` : `${DATA.length}경기 중 ${shown.length}경기 표시`;
+  render(shown);
+}
+
+const num = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+const fmt = (v, d = 2) => v === null ? '–' : v.toFixed(d);
+const result = m => m.score.us > m.score.them ? 'W' : m.score.us < m.score.them ? 'L' : 'D';
+
+function render(data) {
+  const ms = [...data].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  if (!ms.length) {
+    document.getElementById('tiles').innerHTML = '';
+    document.getElementById('formSection').style.display = 'none';
+    document.getElementById('chart').innerHTML = '';
+    document.getElementById('table').innerHTML =
+      '<div class="empty"><b>아직 읽을 경기 기록이 없습니다.</b>경기 JSON이 들어오면 바로 흐름을 잡아볼게요.</div>';
+    document.getElementById('playersSection').style.display = 'none';
+    document.getElementById('passmapSection').style.display = 'none';
+    document.getElementById('compSection').style.display = 'none';
+    ['venueSection', 'timingSection', 'goalsSection', 'oppSection']
+      .forEach(id => document.getElementById(id).style.display = 'none');
+    renderComments([]);
+    renderTactics([]);
+    renderHypotheses();
+    return;
+  }
+
+  const w = ms.filter(m => result(m) === 'W').length;
+  document.getElementById('formSection').style.display = '';
+  const d = ms.filter(m => result(m) === 'D').length;
+  const l = ms.filter(m => result(m) === 'L').length;
+  const gf = ms.reduce((s, m) => s + m.score.us, 0);
+  const ga = ms.reduce((s, m) => s + m.score.them, 0);
+  const xgF = ms.reduce((s, m) => s + (num(m.team_stats?.us?.xg) || 0), 0);
+  const xgA = ms.reduce((s, m) => s + (num(m.team_stats?.them?.xg) || 0), 0);
+  const xgN = ms.filter(m => num(m.team_stats?.us?.xg) !== null).length;
+
+  document.getElementById('range').textContent = `${ms[0].date} — ${ms[ms.length - 1].date} · ${ms.length}경기`;
+
+  // 팀룸 헤더: 숫자를 한 문장으로 압축해 첫 화면에서 현재 상태를 바로 읽게 합니다.
+  const recent = ms.slice(-5);
+  const recentW = recent.filter(m => result(m) === 'W').length;
+  const recentD = recent.filter(m => result(m) === 'D').length;
+  const recentL = recent.filter(m => result(m) === 'L').length;
+  const recentXgF = recent.reduce((s, m) => s + (num(m.team_stats?.us?.xg) || 0), 0);
+  const recentXgA = recent.reduce((s, m) => s + (num(m.team_stats?.them?.xg) || 0), 0);
+  const mood = recentW > recentL + recentD ? '좋은 상승 흐름' : recentL > recentW ? '점검이 필요한 흐름' : '팽팽한 전환 구간';
+  const read = recentXgF >= recentXgA
+    ? `최근 ${recent.length}경기에서 공격 기대값이 앞섭니다. 다음은 찬스를 결과로 바꾸는 장면을 확인할 차례예요.`
+    : `최근 ${recent.length}경기에서 상대의 기회가 더 컸습니다. 수비 간격과 전환 장면을 먼저 살펴볼게요.`;
+  document.getElementById('moodLine').textContent = mood;
+  document.getElementById('headerRead').textContent = read;
+  document.getElementById('recordState').textContent = `최근 ${recentW}승 ${recentD}무 ${recentL}패`;
+  document.getElementById('moodMark').style.background = recentL > recentW ? 'var(--loss)' : recentW > recentL ? 'var(--win)' : 'var(--wh-blue)';
+
+  const tiles = [
+    ['승 · 무 · 패', `${w} · ${d} · ${l}`, ''],
+    ['승점', String(w * 3 + d), `/ ${ms.length * 3}`],
+    ['득실', `${gf}:${ga}`, (gf - ga >= 0 ? '+' : '') + (gf - ga)],
+    xgN === 0
+      ? ['총 xG', '–', '기록 없음']
+      : ['총 xG', fmt(xgF, 1), `상대 ${fmt(xgA, 1)}`],
+    xgN === 0
+      ? ['xG 대비 득점', '–', 'xG 기록 없음']
+      : ['xG 대비 득점', (gf - xgF >= 0 ? '+' : '') + fmt(gf - xgF, 1),
+         (gf - xgF >= 0 ? '초과 달성' : '기회 낭비') + (xgN < ms.length ? ` · ${xgN}/${ms.length}경기` : '')],
+  ];
+  document.getElementById('tiles').innerHTML = tiles.map(([k, v, s]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v">${v}${s ? `<small>${s}</small>` : ''}</div></div>`).join('');
+
+  renderForm(ms);
+  document.getElementById('chart').innerHTML = lineChart(ms);
+  renderPlayers(ms);
+  renderPassmap(ms);
+  renderCompSummary(COMP_CONTEXT);
+  renderVenue(ms);
+  renderTiming(ms);
+  renderGoals(ms);
+  renderOpponents(ms);
+  renderComments(ms);
+  renderTactics(ms);
+  renderHypotheses();
+
+  document.getElementById('table').innerHTML = `<table>
+    <thead><tr><th></th><th>날짜</th><th>상대</th><th></th><th>스코어</th><th>xG</th><th>상대 xG</th><th>슈팅</th><th>완벽 기회</th></tr></thead>
+    <tbody>${[...ms].reverse().map(m => {
+      const r = result(m);
+      const flag = (m.uncertain && m.uncertain.length)
+        ? ` <span class="flag" title="불확실: ${m.uncertain.join(', ')}">⚠</span>` : '';
+      return `<tr>
+        <td><span class="res ${r}">${r}</span></td>
+        <td>${m.date || '–'}</td>
+        <td>${m.opponent || '–'}${flag}</td>
+        <td><span class="venue">${m.venue === 'home' ? '홈' : '원정'}</span></td>
+        <td><b>${m.score.us} : ${m.score.them}</b></td>
+        <td>${fmt(num(m.team_stats?.us?.xg))}</td>
+        <td>${fmt(num(m.team_stats?.them?.xg))}</td>
+        <td>${num(m.team_stats?.us?.shots) ?? '–'}</td>
+        <td>${num(m.team_stats?.us?.clear_cut_chances) ?? '–'}${num(m.team_stats?.them?.clear_cut_chances) != null ? ' : ' + num(m.team_stats?.them?.clear_cut_chances) : ''}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function renderForm(ms) {
+  const recent = ms.slice(-5);
+  const labels = { W: '승리', D: '무승부', L: '패배' };
+  document.getElementById('formStrip').innerHTML = recent.map(m => {
+    const r = result(m);
+    return `<article class="form-match ${r}">
+      <div class="form-date">${m.date || '날짜 없음'} · ${m.venue === 'home' ? '홈' : '원정'}</div>
+      <div class="form-opponent">${m.opponent || '상대 미상'}</div>
+      <div class="form-score">${m.score.us}-${m.score.them} <span>${compOf(m)}</span></div>
+      <div class="form-footer"><span class="form-result">${labels[r]}</span><span>${r}</span></div>
+    </article>`;
+  }).join('');
+  const last = recent[recent.length - 1];
+  document.getElementById('formCaption').innerHTML =
+    `최근 ${recent.length}경기를 시간순으로 표시합니다. 마지막 기록은 <b>${last.opponent || '상대 미상'}전 ${labels[result(last)]}</b>입니다.`;
+}
+
+const rColor = r =>
+  r >= 7.5 ? '#2ea043' : r >= 7.0 ? '#3fb950' : r >= 6.5 ? '#8b949e' : r >= 6.0 ? '#d29922' : '#f85149';
+
+function renderPlayers(ms) {
+  const section = document.getElementById('playersSection');
+  const withP = ms.filter(m => Array.isArray(m.players) && m.players.length);
+  if (!withP.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const opts = [...withP].reverse();
+  const sel = document.getElementById('matchSel');
+  sel.innerHTML = opts.map((m, i) =>
+    `<option value="${i}">${m.date} ${m.opponent}</option>`).join('');
+
+  const drawLineup = i => {
+    const m = opts[i];
+    document.getElementById('lineup').innerHTML = m.players.map(p => {
+      const r = num(p.rating);
+      const isMotm = m.motm && m.motm.name === p.name;
+      return `<div class="p">
+        <span class="no">${p.no ?? ''}</span>
+        <span class="role">${p.role || ''}</span>
+        <span class="nm">${p.name}${isMotm ? ' <span class="star" title="경기 최우수 선수">★</span>' : ''}</span>
+        <span class="rt" style="background:${r === null ? 'var(--line)' : rColor(r)}">${r === null ? '–' : r.toFixed(1)}</span>
+      </div>`;
+    }).join('');
+  };
+  sel.onchange = e => drawLineup(+e.target.value);
+  drawLineup(0);
+
+  const agg = new Map();
+  withP.forEach(m => m.players.forEach(p => {
+    const r = num(p.rating);
+    if (r === null) return;
+    if (!agg.has(p.name)) agg.set(p.name, { name: p.name, no: p.no, rs: [] });
+    agg.get(p.name).rs.push(r);
+  }));
+  const rows = [...agg.values()]
+    .map(a => ({ ...a, avg: a.rs.reduce((s, v) => s + v, 0) / a.rs.length,
+                 hi: Math.max(...a.rs), lo: Math.min(...a.rs) }))
+    .sort((a, b) => b.avg - a.avg);
+
+  const attack = new Map();
+  const bumpAttack = (name, key) => {
+    if (!name) return;
+    if (!attack.has(name)) attack.set(name, { g: 0, a: 0 });
+    attack.get(name)[key]++;
+  };
+  withP.flatMap(goalsOf).forEach(g => {
+    bumpAttack(g.scorer, 'g');
+    bumpAttack(g.assist, 'a');
+  });
+
+  document.getElementById('avgTable').innerHTML = `<table class="mini">
+    <thead><tr><th>선수</th><th>출전</th><th>평균</th><th>최고</th><th>최저</th><th>득점</th><th>도움</th><th>공격포인트</th></tr></thead>
+    <tbody>${rows.map(a => `<tr>
+      <td>${a.name}</td>
+      <td>${a.rs.length}</td>
+      <td><span class="rt" style="background:${rColor(a.avg)}">${a.avg.toFixed(2)}</span>
+          <span class="bar" style="width:${Math.max(0, (a.avg - 5.5) / 2.5 * 46).toFixed(0)}px"></span></td>
+      <td>${a.hi.toFixed(1)}</td>
+      <td>${a.lo.toFixed(1)}</td>
+      <td>${attack.get(a.name)?.g || 0}</td>
+      <td>${attack.get(a.name)?.a || 0}</td>
+      <td><b>${(attack.get(a.name)?.g || 0) + (attack.get(a.name)?.a || 0)}</b></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+const RULE_LABEL = {
+  high_poss_low_xg: '점유 대비 낮은 xG', shots_deficit: '슈팅 열세', low_sot_ratio: '낮은 유효슈팅 비율',
+  xg_underperform: '마무리 부진', xg_overperform: '기대 이상 마무리',
+  corners_against: '코너킥 허용', front_too_deep: '최전방 처짐',
+  isolated_players: '고립 선수', clean_sheet: '무실점', cc_wasted: '완벽한 기회 낭비'
+};
+const POSITIVE_RULES = new Set(['clean_sheet', 'xg_overperform']);
+
+function evalRules(m, avgCornersAgainst) {
+  const R = COMMENT_RULES && COMMENT_RULES.rules;
+  if (!R) return [];
+  const u = (m.team_stats && m.team_stats.us) || {};
+  const t = (m.team_stats && m.team_stats.them) || {};
+  const out = [];
+  const on = id => R[id] && R[id].on !== false;
+  const push = (id, map) => out.push({
+    id, priority: R[id].priority != null ? R[id].priority : 50,
+    text: (R[id].text || '').replace(/\{(\w+)\}/g, (_, k) => map[k] != null ? map[k] : '')
+  });
+  const n = v => (typeof v === 'number' && isFinite(v)) ? v : null;
+
+  if (on('high_poss_low_xg') && n(u.possession) >= R.high_poss_low_xg.possession && n(u.xg) < R.high_poss_low_xg.xg)
+    push('high_poss_low_xg', { poss: u.possession, xg: u.xg.toFixed(2) });
+
+  if (on('shots_deficit') && n(u.shots) != null && n(t.shots) != null && u.shots <= t.shots * R.shots_deficit.ratio)
+    push('shots_deficit', { shots: u.shots, oshots: t.shots });
+
+  if (on('low_sot_ratio') && n(u.shots) >= R.low_sot_ratio.min_shots && n(u.shots_on_target) != null
+      && u.shots_on_target / u.shots < R.low_sot_ratio.ratio)
+    push('low_sot_ratio', { shots: u.shots, sot: u.shots_on_target, pct: Math.round(u.shots_on_target / u.shots * 100) });
+
+  if (on('xg_underperform') && n(u.xg) != null && u.xg - m.score.us >= R.xg_underperform.gap)
+    push('xg_underperform', { xg: u.xg.toFixed(2), goals: m.score.us });
+
+  if (on('xg_overperform') && n(u.xg) != null && m.score.us - u.xg >= R.xg_overperform.gap)
+    push('xg_overperform', { xg: u.xg.toFixed(2), goals: m.score.us });
+
+  if (on('corners_against') && n(t.corners) != null && avgCornersAgainst != null && t.corners > avgCornersAgainst)
+    push('corners_against', { n: t.corners, avg: avgCornersAgainst.toFixed(1) });
+
+  const pm = m.passmap;
+  if (pm && pm.positions && pm.positions.length) {
+    const top = Math.max(...pm.positions.map(p => p.y));
+    if (on('front_too_deep') && top < R.front_too_deep.y) push('front_too_deep', { y: top });
+
+    const linked = new Set((pm.links || []).flatMap(l => [l.from, l.to]));
+    const gkNo = (m.players || []).find(p => (p.role || '').includes('GK'));
+    const alone = pm.positions.filter(p => !linked.has(p.no) && (!gkNo || p.no !== gkNo.no))
+      .map(p => { const pl = (m.players || []).find(q => q.no === p.no); return pl ? pl.name : `#${p.no}`; });
+    if (on('isolated_players') && alone.length) push('isolated_players', { names: alone.join(', ') });
+  }
+
+  if (on('clean_sheet') && m.score.them === 0) push('clean_sheet', { oxg: n(t.xg) != null ? t.xg.toFixed(2) : '–' });
+
+  if (on('cc_wasted') && n(u.clear_cut_chances) != null && u.clear_cut_chances >= R.cc_wasted.min_chances
+      && u.clear_cut_chances > m.score.us)
+    push('cc_wasted', { cc: u.clear_cut_chances, goals: m.score.us });
+
+  return out.sort((a, b) => b.priority - a.priority);
+}
+
+function buildComments(msAsc) {
+  const streak = {};
+  let prev = new Set();
+  const cornersVals = msAsc
+    .map(m => (m.team_stats && m.team_stats.them && m.team_stats.them.corners))
+    .filter(v => typeof v === 'number' && isFinite(v));
+  const avgCornersAgainst = cornersVals.length ? cornersVals.reduce((s, v) => s + v, 0) / cornersVals.length : null;
+  return msAsc.map(m => {
+    const fired = evalRules(m, avgCornersAgainst);
+    const ids = new Set(fired.map(f => f.id));
+    Object.keys(streak).forEach(k => { if (!ids.has(k)) delete streak[k]; });
+    const max = (COMMENT_RULES && COMMENT_RULES.max_per_match) || 3;
+    const lines = fired.map(f => {
+      streak[f.id] = (streak[f.id] || 0) + 1;
+      return streak[f.id] >= 2 ? `${streak[f.id]}경기 연속 — ${f.text}` : f.text;
+    }).slice(0, max);
+    const resolved = [...prev].filter(id => !ids.has(id) && !POSITIVE_RULES.has(id)).map(id => RULE_LABEL[id]).filter(Boolean);
+    prev = ids;
+    return { m, lines, resolved };
+  });
+}
+
+function renderComments(ms) {
+  const section = document.getElementById('commentSection');
+  section.style.display = '';
+  if (!COMMENT_RULES || !ms.length) {
+    document.getElementById('commentBody').innerHTML = `
+      <div class="comment-list">
+        <div class="comment-card coach-empty">
+          <div class="claim">${COACH_VOICE.emptyClaim}</div>
+          <div class="fals">${COACH_VOICE.emptyText}</div>
+        </div>
+      </div>`;
+    return;
+  }
+  const asc = [...ms].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const latest = buildComments(asc).slice(-1)[0];
+  const latestLines = latest.lines.slice(0, Math.max(1, COACH_VOICE.maxSentences - 2));
+  const scoreText = `${latest.m.opponent || '상대'}전 ${latest.m.score.us}-${latest.m.score.them}`;
+  const resultText = result(latest.m) === 'W' ? `감독님, ${scoreText} 승리. 결과는 챙겼어요.`
+    : result(latest.m) === 'D' ? `감독님, ${scoreText} 무승부. 승점은 나눴어요.`
+    : `감독님, ${scoreText} 패배. 이건 변명 못 해요.`;
+  const closing = latestLines.length
+    ? `${resultText} 걸린 장면은 다음 경기에서 바로 보죠.`
+    : `${resultText} 크게 걸리는 건 없어요. 이 흐름은 이어갑시다.`;
+
+  document.getElementById('commentBody').innerHTML = `<div class="comment-list">
+    <div class="comment-card">
+      <div class="claim"><b>${latest.m.date}</b> ${latest.m.opponent}
+        <span class="pill">${result(latest.m)} ${latest.m.score.us}-${latest.m.score.them}</span></div>
+      <div class="brief-copy">${[...latestLines, closing].join(' ')}</div>
+    </div>
+  </div>`;
+}
+
+const WINDOW = 5;
+
+function avgOf(g, pick) {
+  const v = g.map(pick).filter(x => x != null && isFinite(x));
+  return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+}
+
+function tacticStats(g) {
+  if (!g.length) return null;
+  const a = agg(g);
+  return {
+    n: g.length,
+    ppg: a.pts / g.length,
+    gf: a.gf / g.length,
+    ga: a.ga / g.length,
+    xgF: avgOf(g, m => num(m.team_stats?.us?.xg)),
+    xgA: avgOf(g, m => num(m.team_stats?.them?.xg)),
+    sot: avgOf(g, m => num(m.team_stats?.us?.shots_on_target)),
+    corA: avgOf(g, m => num(m.team_stats?.them?.corners))
+  };
+}
+
+const METRICS = [
+  ['경기당 승점', 'ppg', 2, 1],
+  ['득점', 'gf', 2, 1],
+  ['실점', 'ga', 2, -1],
+  ['xG', 'xgF', 2, 1],
+  ['피 xG', 'xgA', 2, -1],
+  ['유효슈팅', 'sot', 1, 1],
+  ['내준 코너킥', 'corA', 1, -1]
+];
+
+function renderTactics(ms) {
+  const section = document.getElementById('tacticSection');
+  if (!TACTICS.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const sorted = [...ms].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  document.getElementById('tacticBody').innerHTML = [...TACTICS]
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .map(t => {
+      const before = tacticStats(sorted.filter(m => m.date < t.date).slice(-WINDOW));
+      const after = tacticStats(sorted.filter(m => m.date >= t.date).slice(0, WINDOW));
+      const thin = (!before || before.n < 3) || (!after || after.n < 3);
+
+      const rows = (!before || !after) ? '' : METRICS.map(([label, key, dp, dir]) => {
+        const b = before[key], a = after[key];
+        if (b == null || a == null) return '';
+        const diff = a - b;
+        const good = diff * dir > 0;
+        const color = Math.abs(diff) < 0.005 ? 'var(--muted)' : (good ? 'var(--win)' : 'var(--loss)');
+        return `<tr><td>${label}</td><td>${b.toFixed(dp)}</td><td>${a.toFixed(dp)}</td>
+          <td style="color:${color}">${diff >= 0 ? '+' : ''}${diff.toFixed(dp)}</td></tr>`;
+      }).join('');
+
+      return `<div class="hyp open" style="border-color:var(--accent)">
+        <div class="claim"><b>${t.date}</b> — ${t.label ? `<span style="color:var(--accent)">[${t.label}]</span> ` : ''}${t.change}</div>
+        <div class="meta">${t.id || ''}${t.season ? ' · ' + t.season : ''}
+          ${before && after ? ` · 이전 ${before.n}경기 / 이후 ${after.n}경기` : ' · 비교할 경기가 부족합니다'}</div>
+        ${t.detail ? `<div class="fals">${t.detail}</div>` : ''}
+        ${t.reason ? `<div class="fals">바꾼 이유 — ${t.reason}</div>` : ''}
+        ${t.expect ? `<div class="fals"><b>기대한 변화</b> — ${t.expect}</div>` : ''}
+        ${rows ? `<table class="mini" style="margin-top:10px">
+          <thead><tr><th></th><th>이전</th><th>이후</th><th>변화</th></tr></thead>
+          <tbody>${rows}</tbody></table>` : ''}
+        ${rows && thin ? '<div class="fals"><b class="warn">표본이 3경기 미만입니다 — 추세로 읽지 마세요.</b></div>' : ''}
+      </div>`;
+    }).join('') +
+    `<p class="note" style="margin:0">전후 최대 ${WINDOW}경기를 비교합니다.
+     상대 난이도가 섞여 있으므로 <b>인과가 아니라 상관</b>입니다.</p>`;
+}
+
+const STATUS_KO = { open: '열림', supported: '지지됨', rejected: '기각됨', stale: '흐지부지' };
+
+function renderHypotheses() {
+  const section = document.getElementById('hypSection');
+  if (!HYPOTHESES.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const order = { open: 0, supported: 1, rejected: 2, stale: 3 };
+  const hs = [...HYPOTHESES].sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
+
+  document.getElementById('hypBody').innerHTML = hs.map(h => {
+    const st = h.status || 'open';
+    const checks = (h.checked || []);
+    return `<div class="hyp ${st}">
+      <div class="claim"><span class="badge ${st}">${STATUS_KO[st] || st}</span>${h.claim || ''}</div>
+      <div class="meta">${h.id} · ${h.created || ''} 생성${h.season ? ' · ' + h.season : ''}
+        · 확인 ${checks.length}건</div>
+      ${h.falsify ? `<div class="fals"><b>기각 조건</b> — ${h.falsify}</div>`
+                  : '<div class="fals"><b>⚠ 기각 조건이 없습니다</b></div>'}
+      ${checks.length ? `<div class="fals">${checks.map(c =>
+        `${c.date} ${c.match || ''}: <b>${c.verdict}</b>${c.note ? ' — ' + c.note : ''}`).join('<br>')}</div>` : ''}
+      ${h.conclusion ? `<div class="fals">결론 — ${h.conclusion}</div>` : ''}
+    </div>`;
+  }).join('') + '<p class="note" style="margin:0">새 경기가 들어오면 <b>지지 근거보다 기각 조건을 먼저</b> 확인합니다.</p>';
+}
+
+function copyText(t, buttonId = 'copyFullBtn') {
+  const done = () => {
+    const b = document.getElementById(buttonId);
+    const old = b.textContent;
+    b.textContent = '복사됨 ✓';
+    setTimeout(() => { b.textContent = old; }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
+  } else fallbackCopy(t, done);
+}
+function fallbackCopy(t, done) {
+  const ta = document.createElement('textarea');
+  ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { alert('복사에 실패했습니다. digest.md 파일을 대신 쓰세요.'); }
+  ta.remove();
+}
+
+function copyDigest(mode = 'full') {
+  const ms = [...SHOWN].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const L = [];
+  const modeLabel = mode === 'short' ? '짧게' : mode === 'match' ? '경기 분석' : '전체 리뷰';
+  const buttonId = mode === 'short' ? 'copyShortBtn' : mode === 'match' ? 'copyMatchBtn' : 'copyFullBtn';
+  L.push(`# ${modeLabel} 분석 요청 — ${document.getElementById('teamName').textContent} (${FILTER_LABEL})`);
+  L.push('');
+  if (!ms.length) { L.push('해당 범위에 경기가 없습니다.'); copyText(L.join('\n'), buttonId); return; }
+
+  L.push(`답변 모드: ${modeLabel}. 수석코치 이예은의 말투로 결론부터 말하고, 확인된 사실과 가설을 구분할 것.`);
+  L.push('');
+
+  const w = ms.filter(m => result(m) === 'W').length;
+  const d = ms.filter(m => result(m) === 'D').length;
+  const l = ms.filter(m => result(m) === 'L').length;
+  const gf = ms.reduce((s, m) => s + m.score.us, 0);
+  const ga = ms.reduce((s, m) => s + m.score.them, 0);
+  const xgMatches = ms.filter(m => num(m.team_stats?.us?.xg) !== null);
+  const xgN = xgMatches.length;
+  const xf = xgMatches.reduce((s, m) => s + num(m.team_stats.us.xg), 0);
+  const xa = xgMatches.reduce((s, m) => s + (num(m.team_stats?.them?.xg) ?? 0), 0);
+
+  L.push(`${ms.length}경기 · ${w}승 ${d}무 ${l}패 · 승점 ${w * 3 + d} · 득실 ${gf}:${ga}`);
+  if (xgN === 0) {
+    L.push('xG 기록 없음 · xG 대비 득점은 계산하지 않음');
+  } else {
+    const xgScope = xgN < ms.length ? ` (${xgN}/${ms.length}경기 기록 기준)` : '';
+    L.push(`xG ${xf.toFixed(1)} 대 ${xa.toFixed(1)}${xgScope} · 실득점은 xG 대비 ${(gf - xf >= 0 ? '+' : '') + (gf - xf).toFixed(1)}`);
+  }
+  L.push('');
+  L.push('| 날짜 | 대회 | 장소 | 상대 | 결과 | xG | 유효/슈팅 | 점유 |');
+  L.push('|---|---|---|---|---|---|---|---|');
+  ms.forEach(m => {
+    const u = m.team_stats?.us, t = m.team_stats?.them;
+    L.push(`| ${m.date} | ${compOf(m)} | ${m.venue === 'home' ? '홈' : '원정'} | ${m.opponent} | ` +
+      `${result(m)} ${m.score.us}-${m.score.them} | ` +
+      `${u?.xg != null ? u.xg.toFixed(2) + '/' + (t?.xg ?? 0).toFixed(2) : '–'} | ` +
+      `${u?.shots != null ? (u.shots_on_target ?? '?') + '/' + u.shots : '–'} | ` +
+      `${u?.possession != null ? u.possession + '%' : '–'} |`);
+  });
+
+  if (mode === 'short') {
+    copyText(L.join('\n'), buttonId);
+    return;
+  }
+
+  if (COMMENT_RULES) {
+    const built = buildComments(ms).filter(b => b.lines.length).slice(-5);
+    if (built.length) {
+      L.push('');
+      L.push('자동 코멘트 (규칙 기반, 최근 5경기):');
+      built.forEach(b => {
+        L.push(`- ${b.m.date} ${b.m.opponent}`);
+        b.lines.forEach(l => L.push(`  · ${l}`));
+      });
+    }
+  }
+
+  if (mode === 'match') {
+    copyText(L.join('\n'), buttonId);
+    return;
+  }
+
+  const agg = new Map();
+  ms.forEach(m => (m.players || []).forEach(p => {
+    if (p.rating == null) return;
+    if (!agg.has(p.name)) agg.set(p.name, []);
+    agg.get(p.name).push(p.rating);
+  }));
+  if (agg.size) {
+    L.push('');
+    L.push('선수 평점(평균, 출전): ' + [...agg.entries()]
+      .map(([n, r]) => ({ n, a: r.reduce((s, v) => s + v, 0) / r.length, c: r.length }))
+      .sort((a, b) => b.a - a.a)
+      .map(o => `${o.n} ${o.a.toFixed(2)}(${o.c})`).join(' · '));
+  }
+
+  const open = HYPOTHESES.filter(h => h.status === 'open');
+  if (open.length) {
+    L.push('');
+    L.push('열린 가설 — 지지 근거보다 기각 조건을 먼저 확인할 것:');
+    open.forEach(h => {
+      L.push(`- ${h.id}: ${h.claim}`);
+      L.push(`  기각 조건: ${h.falsify || '(없음 — 이 가설은 반증 불가능하므로 신뢰하지 말 것)'}`);
+    });
+  }
+
+  if (SQUAD.length) {
+    const s = SQUAD[SQUAD.length - 1];
+    const grow = (s.players || []).filter(p => p.potential_stars - p.current_stars >= 1)
+      .map(p => `${p.name} ★${p.current_stars}→★${p.potential_stars}`);
+    L.push('');
+    L.push(`스쿼드(${s.date}): ${(s.players || []).length}명` + (grow.length ? ` · 성장 여지: ${grow.join(', ')}` : ''));
+  }
+
+  copyText(L.join('\n'), buttonId);
+}
+
+const starEl = (v, cls) => v === null || v === undefined
+  ? '<span class="pct">–</span>'
+  : `<span class="stars ${cls || ''}"><i style="width:${v / 5 * 100}%"></i></span>`;
+
+function renderSquad(matchData = DATA) {
+  const section = document.getElementById('squadSection');
+  const csvPlayers = ATTRIBUTES && ATTRIBUTES.players ? Object.entries(ATTRIBUTES.players) : [];
+  if (!SQUAD.length && !csvPlayers.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  if (!SQUAD.length) {
+    const sel = document.getElementById('squadSel');
+    sel.innerHTML = '<option>CSV 현재 능력치</option>';
+    sel.disabled = true;
+    const groupAvg = (attrs, group) => {
+      const vals = Object.values(attrs?.[group] || {}).filter(v => typeof v === 'number' && isFinite(v));
+      return vals.length ? (vals.reduce((sum, v) => sum + v, 0) / vals.length).toFixed(1) : '–';
+    };
+    const topAttrs = attrs => Object.entries(attrs || {})
+      .filter(([, v]) => typeof v === 'number' && isFinite(v))
+      .sort((a, b) => b[1] - a[1]).slice(0, 3)
+      .map(([name, value]) => `${name} ${value}`).join(' · ') || '–';
+    const footMeter = feet => {
+      if (!feet || typeof feet !== 'object') return '<span class="pct">–</span>';
+      return `<div class="foot-meter">${Object.entries(feet).map(([foot, value]) => {
+        const n = Math.max(0, Math.min(6, Number.parseInt(value, 10) || 0));
+        const label = foot === '왼발' ? 'L' : foot === '오른발' ? 'R' : foot.slice(0, 1);
+        return `<span title="${foot}"><b>${label}</b>${Array.from({ length: 6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+      }).join('')}</div>`;
+    };
+    const attackMap = new Map();
+    (matchData || []).flatMap(goalsOf).forEach(g => {
+      const add = (name, key) => {
+        if (!name) return;
+        if (!attackMap.has(name)) attackMap.set(name, { g: 0, a: 0 });
+        attackMap.get(name)[key]++;
+      };
+      add(g.scorer, 'g');
+      add(g.assist, 'a');
+    });
+    const attackRating = name => {
+      const a = attackMap.get(name);
+      if (!a) return '<span class="pct" title="매치 기록 없음">–</span>';
+      return `<span class="attack-score">${a.g + a.a}</span><span class="pct">${a.g}G · ${a.a}A</span>`;
+    };
+    const rows = csvPlayers.sort(([a], [b]) => a.localeCompare(b, 'ko')).map(([name, p]) => `
+      <tr>
+        <td>${name}</td>
+        <td><span class="pill">${(p.포지션 || []).join(' · ') || '–'}</span></td>
+        <td>${footMeter(p.발)}</td>
+        <td>${attackRating(name)}</td>
+      </tr>`).join('');
+    document.getElementById('squadMeta').innerHTML =
+      `<span class="pill">${csvPlayers.length}명</span>
+       <span class="pill">CSV 갱신 ${ATTRIBUTES.updated || '날짜 없음'}</span>`;
+    document.getElementById('squadBody').innerHTML = `
+      <div class="chart-wrap"><table class="mini squad-table">
+        <thead><tr><th>선수</th><th>포지션</th><th>주발</th><th>공격포인트</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      `;
+    return;
+  }
+
+  const snaps = [...SQUAD].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const sel = document.getElementById('squadSel');
+  sel.disabled = false;
+  const opts = [...snaps].reverse();
+  sel.innerHTML = opts.map((s, i) =>
+    `<option value="${i}">${s.date}${s.game_date ? ` (게임 ${s.game_date})` : ''}</option>`).join('');
+
+  const draw = i => {
+    const snap = opts[i];
+    const prev = snaps[snaps.indexOf(snap) - 1] || null;
+    const ps = snap.players || [];
+    const avg = ps.filter(p => p.current_stars != null);
+    const meanStars = avg.length ? avg.reduce((s, p) => s + p.current_stars, 0) / avg.length : 0;
+    const growers = ps.filter(p => p.potential_stars != null && p.current_stars != null
+                                   && p.potential_stars - p.current_stars >= 1);
+
+    document.getElementById('squadMeta').innerHTML =
+      `<span class="pill">${ps.length}명</span>
+       <span class="pill">평균 현재 ★${meanStars.toFixed(2)}</span>
+       <span class="pill">성장 여지 ★1 이상 ${growers.length}명</span>`;
+
+    const rows = [...ps].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko')).map(p => {
+      const grow = (p.potential_stars != null && p.current_stars != null)
+        ? p.potential_stars - p.current_stars : null;
+      return `<tr>
+        <td>${p.name}</td>
+        <td>${p.age ?? '–'}</td>
+        <td><span class="pill">${p.positions || '–'}</span></td>
+        <td>${starEl(p.current_stars)}<span class="pct">${p.current_pct != null ? p.current_pct.toFixed(1) + '%' : ''}</span></td>
+        <td>${starEl(p.potential_stars, 'pot')}<span class="pct">${p.potential_pct != null ? p.potential_pct.toFixed(1) + '%' : ''}</span></td>
+        <td>${grow ? `<span class="grow">+${grow.toFixed(1)}★</span>` : ''}</td>
+        <td class="pct">${p.current_label || ''}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('squadBody').innerHTML = `
+      <table class="mini">
+        <thead><tr><th>선수</th><th>나이</th><th>포지션</th><th>현재</th><th>잠재</th><th>성장</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${diffBlock(snap, prev)}
+      <p class="note" style="margin-top:16px">⚠ 별점은 <b>star-scale.json</b> 기준으로 이 도구가 매긴 값입니다.
+         원본은 지니스카우트의 역할 적합도 %이며 FM 의 CA/PA 원값이 아닙니다.</p>`;
+  };
+
+  function diffBlock(snap, prev) {
+    if (!prev) return `<p class="note" style="margin-top:16px">비교할 이전 스냅샷이 없습니다.
+      영입·방출 뒤에 다시 내보내면 여기에 변화가 표시됩니다.</p>`;
+    const byName = arr => Object.fromEntries((arr.players || []).map(p => [p.name, p]));
+    const now = byName(snap), before = byName(prev);
+    const joined = Object.keys(now).filter(n => !before[n]);
+    const left = Object.keys(before).filter(n => !now[n]);
+    const moved = Object.keys(now).filter(n => before[n]
+      && now[n].current_pct != null && before[n].current_pct != null
+      && Math.abs(now[n].current_pct - before[n].current_pct) >= 0.5)
+      .map(n => ({ n, d: now[n].current_pct - before[n].current_pct }))
+      .sort((a, b) => b.d - a.d);
+
+    const list = (arr, fmtFn) => arr.length
+      ? `<ul>${arr.map(fmtFn).join('')}</ul>` : '<p class="note">없음</p>';
+    return `<div class="diff">
+      <div><h4>영입 (${prev.date} 대비)</h4>${list(joined, n =>
+        `<li>${n} ${starEl(now[n].current_stars)}</li>`)}</div>
+      <div><h4>이탈</h4>${list(left, n => `<li>${n}</li>`)}</div>
+      <div><h4>능력 변동</h4>${list(moved, o =>
+        `<li>${o.n} <span style="color:${o.d > 0 ? 'var(--win)' : 'var(--loss)'}">${o.d > 0 ? '+' : ''}${o.d.toFixed(1)}%</span></li>`)}</div>
+    </div>`;
+  }
+
+  sel.onchange = e => draw(+e.target.value);
+  draw(0);
+}
+
+function goalsOf(m) {
+  return (m.scorers || []).map(s => {
+    if (typeof s !== 'string') return s;
+    const mt = s.match(/(\d+)'\s*$/);
+    return { scorer: s.replace(/\s*\d+'\s*$/, '').trim(), minute: mt ? Number(mt[1]) : null };
+  });
+}
+
+function agg(ms) {
+  const w = ms.filter(m => result(m) === 'W').length;
+  const d = ms.filter(m => result(m) === 'D').length;
+  const l = ms.filter(m => result(m) === 'L').length;
+  return {
+    n: ms.length, w, d, l, pts: w * 3 + d,
+    gf: ms.reduce((s, m) => s + m.score.us, 0),
+    ga: ms.reduce((s, m) => s + m.score.them, 0),
+    xgF: ms.reduce((s, m) => s + (num(m.team_stats?.us?.xg) || 0), 0),
+    xgA: ms.reduce((s, m) => s + (num(m.team_stats?.them?.xg) || 0), 0)
+  };
+}
+
+function renderVenue(ms) {
+  const section = document.getElementById('venueSection');
+  if (!ms.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const rows = [
+    ['전체', ms],
+    ['홈', ms.filter(m => m.venue === 'home')],
+    ['원정', ms.filter(m => m.venue !== 'home')]
+  ];
+  document.getElementById('venueTable').innerHTML = `<table class="mini">
+    <thead><tr><th></th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승점</th>
+      <th>경기당 승점</th><th>득실</th><th>xG</th><th>상대 xG</th><th>경기당 xG</th></tr></thead>
+    <tbody>${rows.map(([label, g]) => {
+      if (!g.length) return `<tr><td>${label}</td><td colspan="10" class="pct">기록 없음</td></tr>`;
+      const a = agg(g);
+      const bold = label === '전체' ? 'font-weight:650' : '';
+      return `<tr style="${bold}">
+        <td>${label}</td><td>${a.n}</td><td>${a.w}</td><td>${a.d}</td><td>${a.l}</td>
+        <td><b>${a.pts}</b></td><td>${(a.pts / a.n).toFixed(2)}</td>
+        <td>${a.gf}:${a.ga}</td><td>${fmt(a.xgF, 1)}</td><td>${fmt(a.xgA, 1)}</td>
+        <td>${fmt(a.xgF / a.n, 2)}</td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+const BUCKETS = [[1, 15], [16, 30], [31, 45], [46, 60], [61, 75], [76, 999]];
+const BUCKET_LABEL = ['1-15', '16-30', '31-45', '46-60', '61-75', '76+'];
+
+function renderTiming(ms) {
+  const section = document.getElementById('timingSection');
+  const gf = ms.flatMap(goalsOf).map(g => g.minute);
+  if (!gf.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const bucketize = arr => BUCKETS.map(([lo, hi]) =>
+    arr.filter(v => v != null && v >= lo && v <= hi).length);
+  const F = bucketize(gf);
+  const unknown = gf.filter(v => v == null).length;
+  const max = Math.max(1, ...F);
+
+  const W = 620, H = 190, P = { t: 12, r: 12, b: 30, l: 26 };
+  const bw = (W - P.l - P.r) / BUCKETS.length;
+  const y = v => H - P.b - (v / max) * (H - P.t - P.b);
+
+  const bars = BUCKETS.map((_, i) => {
+    const x0 = P.l + i * bw;
+    const w = bw * 0.5;
+    return `
+      <rect x="${x0 + bw * 0.25}" y="${y(F[i])}" width="${w}" height="${H - P.b - y(F[i])}" fill="var(--accent)" rx="2"/>
+      ${F[i] ? `<text x="${x0 + bw / 2}" y="${y(F[i]) - 4}" font-size="10" fill="var(--muted)" text-anchor="middle">${F[i]}</text>` : ''}
+      <text x="${x0 + bw / 2}" y="${H - 10}" font-size="10" fill="var(--muted)" text-anchor="middle">${BUCKET_LABEL[i]}</text>`;
+  }).join('');
+
+  document.getElementById('timingChart').innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+      <line x1="${P.l}" y1="${H - P.b}" x2="${W - P.r}" y2="${H - P.b}" stroke="var(--line)"/>
+      ${bars}
+    </svg>`;
+  document.getElementById('timingNote').innerHTML = unknown
+    ? `<span class="flag">시간 미상 ${unknown}건은 제외</span>` : '';
+}
+
+function renderGoals(ms) {
+  const section = document.getElementById('goalsSection');
+  const all = ms.flatMap(goalsOf);
+  if (!all.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const tally = new Map();
+  const bump = (name, key) => {
+    if (!name) return;
+    if (!tally.has(name)) tally.set(name, { name, g: 0, a: 0 });
+    tally.get(name)[key]++;
+  };
+  all.forEach(g => { bump(g.scorer, 'g'); bump(g.assist, 'a'); });
+
+  const rows = [...tally.values()]
+    .map(o => ({ ...o, p: o.g + o.a }))
+    .sort((a, b) => b.p - a.p || b.g - a.g || a.name.localeCompare(b.name));
+  const max = Math.max(1, ...rows.map(r => r.p));
+
+  document.getElementById('goalsTable').innerHTML = `<table class="mini">
+    <thead><tr><th>선수</th><th>득점</th><th>도움</th><th>공격P</th><th style="width:40%"></th></tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td>${r.name}</td><td>${r.g || ''}</td><td>${r.a || ''}</td><td><b>${r.p}</b></td>
+      <td><div class="barcell"><div class="b" style="width:${r.p / max * 100}%"></div></div></td>
+    </tr>`).join('')}</tbody></table>
+    <p class="note" style="margin:12px 0 0">도움은 경기 JSON에 기록된 경우 집계됩니다.
+      비어 있다고 도움이 없었다는 뜻은 아닙니다.</p>`;
+}
+
+function renderOpponents(ms) {
+  const section = document.getElementById('oppSection');
+  if (ms.length < 2) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  const names = [...new Set(ms.map(m => m.opponent))];
+  const rows = names.map(n => ({ n, a: agg(ms.filter(m => m.opponent === n)) }))
+    .sort((x, y) => y.a.n - x.a.n || (y.a.pts / y.a.n) - (x.a.pts / x.a.n));
+
+  document.getElementById('oppTable').innerHTML = `<table class="mini">
+    <thead><tr><th>상대</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>득실</th><th>xG</th><th>상대 xG</th></tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td>${r.n}</td><td>${r.a.n}</td><td>${r.a.w}</td><td>${r.a.d}</td><td>${r.a.l}</td>
+      <td>${r.a.gf}:${r.a.ga}</td><td>${fmt(r.a.xgF, 1)}</td><td>${fmt(r.a.xgA, 1)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderCompSummary(ms) {
+  const section = document.getElementById('compSection');
+  const comps = [...new Set(ms.map(compOf))];
+  if (comps.length < 2) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const rows = comps.map(c => {
+    const g = ms.filter(m => compOf(m) === c);
+    const w = g.filter(m => result(m) === 'W').length;
+    const d = g.filter(m => result(m) === 'D').length;
+    const l = g.filter(m => result(m) === 'L').length;
+    return {
+      c, n: g.length, w, d, l, pts: w * 3 + d,
+      gf: g.reduce((s, m) => s + m.score.us, 0),
+      ga: g.reduce((s, m) => s + m.score.them, 0),
+      xgF: g.reduce((s, m) => s + (num(m.team_stats?.us?.xg) || 0), 0),
+      xgA: g.reduce((s, m) => s + (num(m.team_stats?.them?.xg) || 0), 0)
+    };
+  }).sort((a, b) => b.n - a.n);
+
+  document.getElementById('compTable').innerHTML = `<table class="mini">
+    <thead><tr><th>대회</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승점</th><th>득실</th><th>xG</th><th>상대 xG</th></tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td>${r.c}</td><td>${r.n}</td>
+      <td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
+      <td><b>${r.pts}</b></td>
+      <td>${r.gf}:${r.ga}</td>
+      <td>${fmt(r.xgF, 1)}</td><td>${fmt(r.xgA, 1)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderPassmap(ms) {
+  const section = document.getElementById('passmapSection');
+  const withPm = ms.filter(m => m.passmap && Array.isArray(m.passmap.positions) && m.passmap.positions.length);
+  if (!withPm.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const opts = [...withPm].reverse();
+  const sel = document.getElementById('pmSel');
+  sel.innerHTML = opts.map((m, i) => `<option value="${i}">${m.date} ${m.opponent}</option>`).join('');
+
+  // --- 기준(고스트) 선택지 ---
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const refOpts = [{ kind: 'none', label: '없음' }];
+  
+  if (typeof REFERENCES !== 'undefined' && Array.isArray(REFERENCES)) {
+    REFERENCES.forEach((r, i) => refOpts.push({ kind: 'model', idx: i, label: `${r.name} (모델)` }));
+  }
+  
+  SHAPES.forEach((s, i) => refOpts.push({ kind: 'shape', idx: i, label: `${s.label} (저장된 형태)` }));
+  if (withPm.length >= 2) {
+    refOpts.push({ kind: 'avg', label: '시즌 평균 (데이터)' });
+    opts.forEach((m, i) => refOpts.push({ kind: 'match', idx: i, label: `${m.date} ${m.opponent}` }));
+  }
+  const refSel = document.getElementById('refSel');
+  refSel.innerHTML = refOpts.map((o, i) => `<option value="${i}">${o.label}</option>`).join('');
+  const defaultRef = Math.max(0, refOpts.findIndex(o => o.kind === 'model'));
+  refSel.value = String(defaultRef);
+
+  const ghostFor = (m, opt) => {
+    const g = {};
+    if (!opt || opt.kind === 'none') return g;
+    m.passmap.positions.forEach(p => {
+      if (opt.kind === 'model') {
+        const role = ((m.players || []).find(pl => pl.no === p.no)?.role || '').trim();
+        const slot = REFERENCES[opt.idx].slots.find(s => (s.role || '').trim() === role);
+        if (slot) g[p.no] = { x: slot.x, y: slot.y };
+      } else if (opt.kind === 'avg') {
+        const all = withPm.map(mm => mm.passmap.positions.find(q => q.no === p.no)).filter(Boolean);
+        if (all.length) g[p.no] = { x: mean(all.map(a => a.x)), y: mean(all.map(a => a.y)) };
+      } else if (opt.kind === 'shape') {
+        const q = SHAPES[opt.idx].positions.find(q => q.no === p.no);
+        if (q) g[p.no] = { x: q.x, y: q.y };
+      } else if (opt.kind === 'match' && opts[opt.idx] !== m) {
+        const q = opts[opt.idx].passmap.positions.find(q => q.no === p.no);
+        if (q) g[p.no] = { x: q.x, y: q.y };
+      }
+    });
+    return g;
+  };
+
+  const draw = (idx, refIdx) => {
+    const m = opts[idx];
+    const pm = m.passmap;
+    const refOpt = refOpts[refIdx] || refOpts[0];
+    const ghost = ghostFor(m, refOpt);
+    const nameOf = no => (m.players || []).find(p => p.no === no)?.name || '';
+    const shortOf = (no, n = 6) => (nameOf(no).split(' ').pop() || String(no)).slice(0, n);
+    const longOf = no => shortOf(no, 10);
+    const pos = Object.fromEntries(pm.positions.map(p => [p.no, p]));
+    const links = pm.links || [];
+    const linked = new Set(links.flatMap(l => [l.from, l.to]));
+
+    const W = 100, H = 155, cy = p => H - p.y / 100 * H;
+    const mark = `
+      <rect x="0" y="0" width="100" height="155" fill="none" stroke="var(--line)" stroke-width=".4"/>
+      <line x1="0" y1="77.5" x2="100" y2="77.5" stroke="var(--line)" stroke-width=".4"/>
+      <circle cx="50" cy="77.5" r="13.5" fill="none" stroke="var(--line)" stroke-width=".4"/>
+      <rect x="20.3" y="0" width="59.4" height="24.4" fill="none" stroke="var(--line)" stroke-width=".4"/>
+      <rect x="20.3" y="130.6" width="59.4" height="24.4" fill="none" stroke="var(--line)" stroke-width=".4"/>
+      <rect x="36.5" y="0" width="27" height="8.1" fill="none" stroke="var(--line)" stroke-width=".4"/>
+      <rect x="36.5" y="146.9" width="27" height="8.1" fill="none" stroke="var(--line)" stroke-width=".4"/>`;
+
+    const edges = links.map(l => {
+      const a = pos[l.from], b = pos[l.to];
+      if (!a || !b) return '';
+      const strong = l.strength >= 3;
+      return `<line x1="${a.x}" y1="${cy(a)}" x2="${b.x}" y2="${cy(b)}" stroke="var(--accent)"
+                    stroke-width="${strong ? 0.9 : 0.5}" stroke-opacity="${strong ? 0.95 : 0.5}" stroke-linecap="round"/>`;
+    }).join('');
+
+    const nodes = pm.positions.map(p => {
+      const on = linked.has(p.no);
+      return `<g>
+        <title>${p.no} ${nameOf(p.no)}</title>
+        <circle cx="${p.x}" cy="${cy(p)}" r="4" fill="${on ? 'var(--accent)' : 'var(--panel)'}"
+                stroke="${on ? 'none' : 'var(--muted)'}" stroke-width=".5"/>
+        <text x="${p.x}" y="${cy(p) + 1.4}" font-size="4" text-anchor="middle"
+              fill="${on ? '#0d1117' : 'var(--muted)'}" font-weight="700">${p.no}</text>
+        <text x="${p.x}" y="${cy(p) + 8.4}" font-size="3.2" text-anchor="middle" fill="var(--muted)">${shortOf(p.no)}</text>
+      </g>`;
+    }).join('');
+
+    const ghosts = Object.entries(ghost).map(([no, g]) => {
+      const p = pos[no];
+      if (!p) return '';
+      return `<g>
+        <line x1="${g.x}" y1="${cy(g)}" x2="${p.x}" y2="${cy(p)}" stroke="var(--muted)"
+              stroke-width=".35" stroke-dasharray="1.5 1.5" stroke-opacity=".7"/>
+        <circle cx="${g.x}" cy="${cy(g)}" r="4" fill="none" stroke="var(--muted)"
+                stroke-width=".45" stroke-dasharray="1.6 1.4" stroke-opacity=".85"/>
+      </g>`;
+    }).join('');
+
+    document.getElementById('pitch').innerHTML =
+      `<svg class="pitch" viewBox="-3 -3 106 161">${mark}${ghosts}${edges}${nodes}</svg>`;
+
+    const chain = links.map(l =>
+      `<li>${l.from} ${longOf(l.from)} ↔ ${l.to} ${longOf(l.to)}` +
+      `${l.strength >= 3 ? '' : ' <span style="opacity:.6">(중)</span>'}</li>`).join('');
+    const alone = pm.positions.filter(p => !linked.has(p.no))
+      .map(p => `${p.no} ${longOf(p.no)}`).join(', ');
+    const highest = [...pm.positions].sort((a, b) => b.y - a.y)[0];
+    const gkNo = (m.players || []).find(p => (p.role || '').includes('GK'))?.no
+      ?? [...pm.positions].sort((a, b) => a.y - b.y)[0].no;
+    const outfield = pm.positions.filter(p => p.no !== gkNo);
+    const span = Math.max(...outfield.map(p => p.y)) - Math.min(...outfield.map(p => p.y));
+
+    document.getElementById('pmNote').innerHTML = `
+      <p>공격 방향 <b>↑</b> · 아래가 우리 골문${Object.keys(ghost).length ? ' · 점선 원 = 기준 위치' : ''}</p>
+      <p><b>강한 연결</b></p><ul class="links">${chain}</ul>
+      ${alone ? `<p><b>강한 연결 없음</b> — <span class="warn">${alone}</span></p>` : ''}
+      <p><b>가장 높은 평균 위치</b> — ${highest.no} ${longOf(highest.no)}, 핏치 ${highest.y}% 지점
+         ${highest.y < 60 ? '<span class="warn">(하프라인 부근)</span>' : ''}</p>
+      <p><b>필드플레이어 종적 폭</b> — ${span}%</p>
+      ${diffBlock()}
+      ${pm.approx ? '<p class="warn">⚠ 좌표·연결 강도는 스크린샷을 눈으로 읽은 추정치입니다. 패스 개수·성공률은 화면에 없어 기록하지 않습니다.</p>' : ''}`;
+
+    function diffBlock() {
+      const ds = Object.entries(ghost)
+        .filter(([no]) => pos[no])
+        .map(([no, g]) => ({ no: +no, dy: pos[no].y - g.y }))
+        .sort((a, b) => a.dy - b.dy);
+      if (!ds.length) return '';
+      const behind = ds.filter(d => d.dy <= -8).slice(0, 5);
+      const md = mean(ds.map(d => d.dy));
+      const missed = pm.positions.filter(p => !ghost[p.no]).map(p => {
+        const role = ((m.players || []).find(pl => pl.no === p.no)?.role || '').trim();
+        return `${p.no} ${longOf(p.no)}${role ? ` (역할 ${role})` : ' (역할 정보 없음)'}`;
+      });
+      return `
+        ${missed.length ? `<p class="warn" style="margin-top:14px">⚠ 기준을 찾지 못한 선수 ${missed.length}명 — ${missed.join(', ')}<br>
+          <span style="opacity:.8">이 선수들은 비교에서 빠져 있습니다.
+          ${refOpt.kind === 'model' ? 'REFERENCES 배열의 역할 코드와 경기 기록의 역할 코드가 다른지 확인하세요.' : '등번호가 겹치지 않습니다.'}</span></p>` : ''}
+        <p style="margin-top:18px"><b>기준 대비</b> — ${refOpt.label}</p>
+        <p>평균 전진도 <b>${md >= 0 ? '+' : ''}${md.toFixed(1)}%</b>
+           ${md < -5 ? '<span class="warn">(기준보다 전체적으로 내려앉음)</span>' : ''}</p>
+        ${behind.length ? `<p>기준보다 뒤에 선 선수</p><ul class="links">${behind.map(d =>
+          `<li>${d.no} ${longOf(d.no)} <span class="warn">${d.dy.toFixed(0)}%</span></li>`).join('')}</ul>` : ''}
+        ${refOpt.kind === 'model'
+          ? '<p class="warn">⚠ 기준 형태는 측정값이 아니라 <b>선택한 전술 모델</b>입니다. 파일 상단의 REFERENCES 배열을 수정하여 직접 고치실 수 있습니다.</p>'
+          : ''}
+        ${refOpt.kind === 'shape'
+          ? `<p>이 기준은 <b>실제 측정된 형태</b>이지만 경기 정보가 없습니다 — 승패·xG 통계에는 포함되지 않습니다.
+             ${SHAPES[refOpt.idx].positions.filter(q => !pos[q.no]).length
+               ? `<span class="warn">등번호가 겹치지 않는 ${SHAPES[refOpt.idx].positions.filter(q => !pos[q.no]).length}명은 비교에서 빠집니다.</span>` : ''}</p>`
+          : ''}`;
+    }
+  };
+
+  const redraw = () => draw(+sel.value, +refSel.value);
+  sel.onchange = redraw;
+  refSel.onchange = redraw;
+  draw(0, defaultRef);
+}
+
+function lineChart(ms) {
+  const W = Math.max(640, ms.length * 28 + 40);
+  const H = 200, P = { t: 15, r: 25, b: 25, l: 30 };
+  
+  const F = ms.map(m => num(m.team_stats?.us?.xg));
+  const A = ms.map(m => num(m.team_stats?.them?.xg));
+  
+  if (F.every(v => v === null) && A.every(v => v === null)) {
+    return `<div class="empty">xG 기록이 없습니다.</div>`;
+  }
+  
+  const max = Math.max(1, ...[...F, ...A].filter(v => v !== null)) * 1.1;
+  const x = i => P.l + (ms.length > 1 ? i * ((W - P.l - P.r) / (ms.length - 1)) : (W - P.l - P.r) / 2);
+  const y = v => H - P.b - (v / max) * (H - P.t - P.b);
+  
+  const path = arr => arr.map((v, i) => v !== null ? `${i === 0 || arr[i-1] === null ? 'M' : 'L'} ${x(i)} ${y(v)}` : '').join(' ');
+  const dots = (arr, cl) => arr.map((v, i) => v !== null ? `<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="${cl}" stroke="var(--panel)" stroke-width="1.5"/>` : '').join('');
+  
+  const yTicks = [0, 1, 2, 3, 4, 5].filter(v => v <= max);
+  const grid = yTicks.map(v => `<line x1="${P.l-4}" y1="${y(v)}" x2="${W-P.r}" y2="${y(v)}" stroke="var(--line)"/>
+    <text x="${P.l-8}" y="${y(v)+3.5}" font-size="10" fill="var(--muted)" text-anchor="end">${v}</text>`).join('');
+  
+  const xLabels = ms.map((m, i) => {
+    if (ms.length > 20 && i % 2 !== 0) return '';
+    return `<text x="${x(i)}" y="${H - 5}" font-size="9" fill="var(--muted-dim)" text-anchor="middle" font-family="var(--disp)">${(m.date||'').slice(5).replace('-','/')}</text>`;
+  }).join('');
+  
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    ${grid}${xLabels}
+    <path d="${path(A)}" fill="none" stroke="var(--loss)" stroke-width="2" stroke-opacity=".4"/>
+    ${dots(A, 'var(--loss)')}
+    <path d="${path(F)}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    ${dots(F, 'var(--accent)')}
+  </svg>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const filePicker = document.getElementById('picker');
+  if (filePicker) {
+    filePicker.addEventListener('change', async e => {
+      const files = Array.from(e.target.files).filter(f => f.name.endsWith('.json'));
+      if (!files.length) return;
+      
+      const readAsText = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+      
+      const ms = [];
+      for (const f of files) {
+        try {
+          const txt = await readAsText(f);
+          const j = JSON.parse(txt);
+          if (j.score) ms.push(j);
+        } catch (err) {
+          console.error('Failed to parse', f.name, err);
+        }
+      }
+      
+      if (ms.length) {
+        ms.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        setData(ms);
+      }
+    });
+  }
+
+  // 초기 렌더링 호출
+  setData(MATCHES);
+});
+
+// 스크롤 탑 버튼 로직
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('toTop');
+  if (btn) {
+    if (window.scrollY > 300) btn.classList.add('show');
+    else btn.classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>

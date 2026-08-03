@@ -1,0 +1,44 @@
+{
+  "_comment": "자동 코멘트 규칙. 임계값은 이 도구가 정한 모델이지 게임에서 온 값이 아니다. reference-shape.json·star-scale.json 과 같은 성격이니 마음대로 고치세요.",
+  "_how": "on 을 false 로 하면 그 규칙은 꺼진다. priority 가 높은 순으로 max_per_match 개까지만 표시된다. text 의 {중괄호}는 실제 수치로 치환된다.",
+  "max_per_match": 3,
+
+  "rules": {
+    "high_poss_low_xg": {
+      "on": true, "priority": 95, "possession": 55, "xg": 1.0,
+      "text": "감독님, 점유율 {poss}%로 공은 잡았는데 xG가 {xg}에 그쳤어요. 박스 안 침투부터 봐야 합니다."
+    },
+    "shots_deficit": {
+      "on": true, "priority": 90, "ratio": 0.5,
+      "text": "슈팅 {shots}대 {oshots}로 밀렸어요. 결과보다 이쪽이 더 찜찜합니다."
+    },
+    "low_sot_ratio": {
+      "on": true, "priority": 75, "min_shots": 10, "ratio": 0.3,
+      "text": "슈팅 {shots}개 중 유효 {sot}개({pct}%). 슈팅 선택이 거칠었어요. 다음엔 골문 안쪽부터 봐야 합니다."
+    },
+    "xg_underperform": {
+      "on": true, "priority": 70, "gap": 1.0,
+      "text": "xG {xg}에 실제 {goals}골. 만들어낸 기회를 놓쳤어요. 이건 마무리 문제입니다."
+    },
+    "xg_overperform": {
+      "on": true, "priority": 40, "gap": 1.0,
+      "text": "xG {xg}에 실제 {goals}골. 오늘은 마무리가 제대로 터졌어요. 다만 매번 기대하진 맙시다."
+    },
+    "corners_against": {
+      "on": true, "priority": 60, "count": 8,
+      "text": "코너킥 {n}개를 내줬어요. 세트피스 수비는 다음 경기에서 바로 점검해야 합니다."
+    },
+    "front_too_deep": {
+      "on": true, "priority": 80, "y": 60,
+      "text": "가장 높이 선 선수가 핏치 {y}% 지점이에요. 최전방이 너무 내려와 공격이 짧아졌습니다."
+    },
+    "isolated_players": {
+      "on": true, "priority": 80,
+      "text": "{names}의 연결이 끊겼어요. 빌드업에서 이 선수들이 고립됐습니다."
+    },
+    "clean_sheet": {
+      "on": true, "priority": 30,
+      "text": "무실점. 피xG {oxg}를 버텨냈어요. 이런 날은 수비가 칭찬받아야죠."
+    }
+  }
+}

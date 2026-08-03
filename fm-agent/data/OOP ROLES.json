@@ -1,0 +1,90 @@
+{
+  "ST": [
+    {
+      "role": "CFD",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "TCF",
+      "defensive_duty": "Actively tracks back to defend."
+    },
+    {
+      "role": "OCF",
+      "defensive_duty": "Stays forward for counter-attacks, minimizing defensive duties."
+    }
+  ],
+  "AMLR": [
+    {
+      "role": "W",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "TW",
+      "defensive_duty": "Actively tracks back to defend."
+    },
+    {
+      "role": "IOW",
+      "defensive_duty": "Stays in the half-space for counter-attacks, minimizing defensive duties."
+    }
+  ],
+  "MLR": [
+    {
+      "role": "WM",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "TWM",
+      "defensive_duty": "Actively tracks back to defend."
+    },
+    {
+      "role": "OWM",
+      "defensive_duty": "Stays wide for counter-attacks, minimizing defensive duties."
+    }
+  ],
+  "DM": [
+    {
+      "role": "DM",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "PDM",
+      "defensive_duty": "Presses opponents aggressively."
+    },
+    {
+      "role": "SDM",
+      "defensive_duty": "Holds position to protect the designated zone."
+    },
+    {
+      "role": "WDM",
+      "defensive_duty": "Drifts wide to cover the flanks."
+    }
+  ],
+  "DLR": [
+    {
+      "role": "FB",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "PFB",
+      "defensive_duty": "Presses opponents aggressively."
+    },
+    {
+      "role": "HFB",
+      "defensive_duty": "Holds position to protect the designated zone."
+    }
+  ],
+  "CB": [
+    {
+      "role": "CB",
+      "defensive_duty": "Balanced defensive contribution."
+    },
+    {
+      "role": "CCB",
+      "defensive_duty": "Drops deep to cover the space behind the defensive line."
+    },
+    {
+      "role": "SCB",
+      "defensive_duty": "Steps up to press early and intercept the ball."
+    }
+  ]
+}

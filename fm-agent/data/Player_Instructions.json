@@ -1,0 +1,60 @@
+{
+  "player": {
+    "attacking_width": [
+      "wider",
+      "narrower",
+      "move_into_channels",
+      "default"
+    ],
+    "dribble_direction": [
+      "inside",
+      "outside",
+      "default"
+    ],
+    "dribble_frequency": [
+      "less",
+      "more",
+      "default"
+    ],
+    "forward_runs": [
+      "less",
+      "more",
+      "default"
+    ],
+    "roam_from_position": [
+      true,
+      false
+    ],
+    "control_tempo": [
+      true,
+      false
+    ],
+    "shooting": [
+      "more",
+      "less",
+      "default"
+    ],
+    "passing_risk": [
+      "risky",
+      "safe",
+      "default"
+    ],
+    "passing_length": [
+      "short",
+      "long",
+      "default"
+    ],
+    "cross_from": [
+      "deep",
+      "byline",
+      "default"
+    ],
+    "cross_aim": [
+      "far_post",
+      "center",
+      "near_post",
+      "target_forward",
+      "default"
+    ]
+  }
+}

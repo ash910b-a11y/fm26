@@ -1,0 +1,115 @@
+{
+  "date": "2025-08-16",
+  "season": "2025/26",
+  "competition": "프리미어 리그",
+  "opponent": "선덜랜드",
+  "venue": "away",
+  "opponent_formation": "4-4-2",
+  "formation": "4-2-3-1",
+  "score": {
+    "us": 4,
+    "them": 1
+  },
+  "team_stats": {
+    "us": {
+      "xg": 3.86,
+      "shots": 24,
+      "shots_on_target": 10,
+      "possession": 54,
+      "corners": 8,
+      "clear_cut_chances": 4
+    },
+    "them": {
+      "xg": 1.38,
+      "shots": 14,
+      "shots_on_target": 3,
+      "possession": 46,
+      "corners": 3,
+      "clear_cut_chances": 2
+    }
+  },
+  "scorers": [
+    {
+      "scorer": "발렌틴 카스테야노스",
+      "minute": 21,
+      "assist": "재러드 보언"
+    },
+    {
+      "scorer": "재러드 보언",
+      "minute": 59,
+      "assist": "에런 완 비사카"
+    },
+    {
+      "scorer": "발렌틴 카스테야노스",
+      "minute": 76
+    },
+    {
+      "scorer": "발렌틴 카스테야노스",
+      "minute": 90,
+      "assist": "아다마 트라오레"
+    }
+  ],
+  "players": [
+    {
+      "name": "발렌틴 카스테야노스",
+      "role": "P",
+      "rating": 9.1
+    },
+    {
+      "name": "크리센시오 서머빌",
+      "role": "WFD",
+      "rating": 7.4
+    },
+    {
+      "name": "마테우스 페르난데스",
+      "role": "AP",
+      "rating": 7.0
+    },
+    {
+      "name": "재러드 보언",
+      "role": "IF",
+      "rating": 8.6
+    },
+    {
+      "name": "토마시 소우체크",
+      "role": "BBM",
+      "rating": 7.0
+    },
+    {
+      "name": "슘쿠투 마가사",
+      "role": "HB",
+      "rating": 6.6
+    },
+    {
+      "name": "엘 하지 말리크 디우프",
+      "role": "FB",
+      "rating": 7.2
+    },
+    {
+      "name": "맥스 킬먼",
+      "role": "BCB",
+      "rating": 6.8
+    },
+    {
+      "name": "장 클레르 토디보",
+      "role": "CB",
+      "rating": 6.7
+    },
+    {
+      "name": "에런 완 비사카",
+      "role": "WB",
+      "rating": 7.2
+    },
+    {
+      "name": "코스타스 졸라키스",
+      "role": "BGK",
+      "rating": 6.7
+    }
+  ],
+  "motm": {
+    "name": "발렌틴 카스테야노스",
+    "rating": 9.08
+  },
+  "notes": "",
+  "uncertain": []
+}
