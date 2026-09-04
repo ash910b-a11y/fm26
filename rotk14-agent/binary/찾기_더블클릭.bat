@@ -3,28 +3,28 @@ chcp 65001 > nul
 setlocal
 
 echo.
-echo   === Sangokushi 14 - Trait ID Finder ===
+echo   === Sangokushi 14 - Trait Name Finder ===
 echo.
 
 set "TARGET=%~1"
 if "%TARGET%"=="" (
-  echo   Drag the game data file onto this .bat file,
-  echo   or type its full path below.
+  echo   Drag a FILE or a FOLDER onto this .bat file,
+  echo   or type the full path below.
   echo.
-  set /p TARGET="   File path: "
+  set /p TARGET="   Path: "
 )
 
 set "TARGET=%TARGET:"=%"
 if not exist "%TARGET%" (
   echo.
-  echo   [X] File not found: %TARGET%
+  echo   [X] Not found: %TARGET%
   echo.
   pause
   exit /b 1
 )
 
 set "OUT=%~dp0result.txt"
-echo   Scanning... this may take a minute for a large file.
+echo   Scanning... a large folder may take a few minutes.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0GaeseongID.ps1" "%TARGET%" > "%OUT%" 2>&1

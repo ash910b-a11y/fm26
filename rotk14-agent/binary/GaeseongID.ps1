@@ -1,46 +1,64 @@
-﻿# 삼국지14 데이터 파일에서 개성 ID 표를 찾는다.
-# 사용법:  powershell -ExecutionPolicy Bypass -File 개성ID찾기.ps1 "C:\경로\데이터파일"
+﻿# 삼국지14 데이터에서 개성 이름을 찾는다.
+# 파일 하나든 폴더 전체든 받는다. 폴더면 안의 모든 파일을 훑는다.
 param([Parameter(Mandatory=$true)][string]$Path)
 
-if (-not (Test-Path $Path)) { Write-Host "파일이 없다: $Path"; exit 1 }
+$known = [ordered]@{ "견수"=7; "낭비"=31; "신안"=48; "산전"=69; "응원"=96; "신장"=150 }
+$extra = @("간웅","통찰","복룡","효웅","견뢰","지리","질주","소탕","호걸","단기","방원","안행","어린","철벽")
+$all   = @($known.Keys) + $extra
 
-# ID 를 이미 아는 개성들. 이 이름들이 파일 어디에 있는지 찾는다.
-$known = @{ "견수"=7; "낭비"=31; "신안"=48; "산전"=69; "응원"=96; "신장"=150 }
-# 위치 확인용으로 몇 개 더 본다.
-$extra = @("간웅","통찰","복룡","효웅","견뢰","지리","질주","소탕","호걸","단기")
+if (Test-Path $Path -PathType Container) {
+    $files = Get-ChildItem -Path $Path -File -Recurse | Sort-Object Length -Descending
+    Write-Host "폴더: $Path"
+} else {
+    $files = @(Get-Item $Path)
+    Write-Host "파일: $Path"
+}
+Write-Host "대상 $($files.Count)개, 총 $([math]::Round(($files | Measure-Object Length -Sum).Sum/1MB,1)) MB"
+Write-Host "훑는 중...`n"
 
-Write-Host "파일 읽는 중... ($([math]::Round((Get-Item $Path).Length/1MB,1)) MB)"
-$bytes = [System.IO.File]::ReadAllBytes($Path)
-Write-Host "$($bytes.Length) 바이트`n"
+$found = @{}
+$scanned = 0
+foreach ($f in $files) {
+    if ($f.Length -lt 64 -or $f.Length -gt 400MB) { continue }
+    $scanned++
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
+        # UTF-16LE 로 통째로 해석한 뒤 문자열 검색 — 바이트 루프보다 훨씬 빠르다
+        $text = [System.Text.Encoding]::Unicode.GetString($bytes)
+    } catch { continue }
 
-function Find-All([byte[]]$hay, [byte[]]$needle) {
-    $hits = New-Object System.Collections.Generic.List[int]
-    $limit = $hay.Length - $needle.Length
-    for ($i = 0; $i -le $limit; $i++) {
-        if ($hay[$i] -ne $needle[0]) { continue }
-        $ok = $true
-        for ($j = 1; $j -lt $needle.Length; $j++) {
-            if ($hay[$i+$j] -ne $needle[$j]) { $ok = $false; break }
+    foreach ($name in $all) {
+        $i = $text.IndexOf($name)
+        if ($i -ge 0) {
+            if (-not $found.ContainsKey($f.Name)) { $found[$f.Name] = @{} }
+            if (-not $found[$f.Name].ContainsKey($name)) {
+                $found[$f.Name][$name] = $i * 2   # 문자 위치 -> 바이트 오프셋
+            }
         }
-        if ($ok) { [void]$hits.Add($i); if ($hits.Count -ge 8) { break } }
     }
-    return $hits
 }
 
-Write-Host "=== ID 를 아는 개성 ==="
-foreach ($name in $known.Keys | Sort-Object) {
-    $pat = [System.Text.Encoding]::Unicode.GetBytes($name)   # UTF-16LE
-    $hits = Find-All $bytes $pat
-    $where = if ($hits.Count -eq 0) { "못 찾음" } else { ($hits | ForEach-Object { "0x{0:X}" -f $_ }) -join ", " }
-    Write-Host ("{0,-6} ID={1,-4} -> {2}" -f $name, $known[$name], $where)
+Write-Host "훑은 파일: $scanned 개`n"
+
+if ($found.Count -eq 0) {
+    Write-Host "=== 아무것도 못 찾았다 ==="
+    Write-Host "개성 이름이 UTF-16LE 로 들어있지 않거나 압축되어 있다."
+    Write-Host "여기서 포기하고 게임에서 직접 만드는 게 맞다."
+} else {
+    # 많이 걸린 파일부터
+    foreach ($fname in ($found.Keys | Sort-Object { -$found[$_].Count })) {
+        $hits = $found[$fname]
+        Write-Host "=== $fname  ($($hits.Count)개 발견) ==="
+        foreach ($name in $all) {
+            if ($hits.ContainsKey($name)) {
+                $id = if ($known.Contains($name)) { "ID=$($known[$name])" } else { "" }
+                Write-Host ("  {0,-6} {1,-8} 0x{2:X}  ({2})" -f $name, $id, $hits[$name])
+            }
+        }
+        Write-Host ""
+    }
+    Write-Host "ID 를 아는 여섯 개(견수7 낭비31 신안48 산전69 응원96 신장150)가"
+    Write-Host "한 파일에 다 있고 간격이 일정하면 성공이다."
 }
 
-Write-Host "`n=== ID 를 모르는 개성 ==="
-foreach ($name in $extra) {
-    $pat = [System.Text.Encoding]::Unicode.GetBytes($name)
-    $hits = Find-All $bytes $pat
-    $where = if ($hits.Count -eq 0) { "못 찾음" } else { ($hits | ForEach-Object { "0x{0:X}" -f $_ }) -join ", " }
-    Write-Host ("{0,-6}          -> {1}" -f $name, $where)
-}
-
-Write-Host "`n출력 전체를 그대로 복사해서 붙여넣으면 된다."
+Write-Host "`n출력 전체를 복사해서 붙여넣으면 된다."
