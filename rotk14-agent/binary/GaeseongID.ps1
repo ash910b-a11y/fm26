@@ -1,64 +1,65 @@
-﻿# 삼국지14 데이터에서 개성 이름을 찾는다.
-# 파일 하나든 폴더 전체든 받는다. 폴더면 안의 모든 파일을 훑는다.
+﻿# 삼국지14 데이터에서 개성 이름을 찾는다. 인코딩 세 가지를 모두 시도한다.
 param([Parameter(Mandatory=$true)][string]$Path)
 
 $known = [ordered]@{ "견수"=7; "낭비"=31; "신안"=48; "산전"=69; "응원"=96; "신장"=150 }
-$extra = @("간웅","통찰","복룡","효웅","견뢰","지리","질주","소탕","호걸","단기","방원","안행","어린","철벽")
+# 철벽은 흔한 단어라 오탐이 잦다. 개성 이름 위주로 본다.
+$extra = @("간웅","통찰","복룡","효웅","견뢰","지리","질주","소탕","호걸","단기","봉시","방원","안행")
 $all   = @($known.Keys) + $extra
+
+$encs = [ordered]@{
+    "UTF-16LE" = [System.Text.Encoding]::Unicode
+    "UTF-8"    = [System.Text.Encoding]::UTF8
+    "CP949"    = [System.Text.Encoding]::GetEncoding(949)
+}
 
 if (Test-Path $Path -PathType Container) {
     $files = Get-ChildItem -Path $Path -File -Recurse | Sort-Object Length -Descending
     Write-Host "폴더: $Path"
 } else {
-    $files = @(Get-Item $Path)
-    Write-Host "파일: $Path"
+    $files = @(Get-Item $Path); Write-Host "파일: $Path"
 }
 Write-Host "대상 $($files.Count)개, 총 $([math]::Round(($files | Measure-Object Length -Sum).Sum/1MB,1)) MB"
-Write-Host "훑는 중...`n"
+Write-Host "인코딩 3종으로 훑는 중...`n"
 
-$found = @{}
+$rows = New-Object System.Collections.Generic.List[object]
 $scanned = 0
 foreach ($f in $files) {
     if ($f.Length -lt 64 -or $f.Length -gt 400MB) { continue }
     $scanned++
-    try {
-        $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
-        # UTF-16LE 로 통째로 해석한 뒤 문자열 검색 — 바이트 루프보다 훨씬 빠르다
-        $text = [System.Text.Encoding]::Unicode.GetString($bytes)
-    } catch { continue }
-
-    foreach ($name in $all) {
-        $i = $text.IndexOf($name)
-        if ($i -ge 0) {
-            if (-not $found.ContainsKey($f.Name)) { $found[$f.Name] = @{} }
-            if (-not $found[$f.Name].ContainsKey($name)) {
-                $found[$f.Name][$name] = $i * 2   # 문자 위치 -> 바이트 오프셋
+    try { $bytes = [System.IO.File]::ReadAllBytes($f.FullName) } catch { continue }
+    foreach ($encName in $encs.Keys) {
+        try { $text = $encs[$encName].GetString($bytes) } catch { continue }
+        $mul = if ($encName -eq "UTF-16LE") { 2 } else { 1 }
+        foreach ($name in $all) {
+            $i = $text.IndexOf($name)
+            if ($i -ge 0) {
+                $rows.Add([pscustomobject]@{
+                    File=$f.Name; Enc=$encName; Name=$name
+                    Id=$(if ($known.Contains($name)) { $known[$name] } else { "" })
+                    Off=$i*$mul
+                })
             }
         }
     }
 }
 
-Write-Host "훑은 파일: $scanned 개`n"
+Write-Host "훑은 파일: $scanned 개, 발견 $($rows.Count) 건`n"
 
-if ($found.Count -eq 0) {
+if ($rows.Count -eq 0) {
     Write-Host "=== 아무것도 못 찾았다 ==="
-    Write-Host "개성 이름이 UTF-16LE 로 들어있지 않거나 압축되어 있다."
-    Write-Host "여기서 포기하고 게임에서 직접 만드는 게 맞다."
+    Write-Host "개성 이름이 평문으로 들어있지 않다. 압축되어 있을 가능성이 높다."
+    Write-Host "여기서 접고 게임에서 직접 만드는 것이 맞다."
 } else {
-    # 많이 걸린 파일부터
-    foreach ($fname in ($found.Keys | Sort-Object { -$found[$_].Count })) {
-        $hits = $found[$fname]
-        Write-Host "=== $fname  ($($hits.Count)개 발견) ==="
-        foreach ($name in $all) {
-            if ($hits.ContainsKey($name)) {
-                $id = if ($known.Contains($name)) { "ID=$($known[$name])" } else { "" }
-                Write-Host ("  {0,-6} {1,-8} 0x{2:X}  ({2})" -f $name, $id, $hits[$name])
-            }
+    $g = $rows | Group-Object File, Enc | Sort-Object Count -Descending
+    foreach ($grp in $g) {
+        Write-Host "=== $($grp.Name)  —  $($grp.Count)개 ==="
+        foreach ($r in ($grp.Group | Sort-Object Off)) {
+            Write-Host ("  {0,-6} {1,-5} 0x{2:X} ({2})" -f $r.Name, $r.Id, $r.Off)
         }
         Write-Host ""
     }
-    Write-Host "ID 를 아는 여섯 개(견수7 낭비31 신안48 산전69 응원96 신장150)가"
-    Write-Host "한 파일에 다 있고 간격이 일정하면 성공이다."
+    Write-Host "한 파일·한 인코딩에서 여러 개가 함께 나왔다면 그게 표다."
+    Write-Host "하나만 덜렁 나온 것은 우연일 가능성이 높다."
 }
 
 Write-Host "`n출력 전체를 복사해서 붙여넣으면 된다."
