@@ -77,3 +77,8 @@ powershell -ExecutionPolicy Bypass -File "C:\Users\LSH\Desktop\CLAUDE\fm-agent\b
 
 **짧게.** 수정 이유와 바뀐 부분만 말한다. 표·예시를 습관적으로 붙이지 않는다.
 코드를 채팅에 다시 찍지 않는다 — 파일에 적용하고 무엇을 왜 바꿨는지만 말한다.
+
+## 다른 프로젝트
+
+이 저장소에는 **삼국지14 PK 참모** 프로젝트가 `rotk14-agent/` 에 따로 들어 있다.
+FM 세션에서는 읽지 않는다. 삼국지 얘기가 나올 때만 `rotk14-agent/GUIDE.md` 로 들어간다.
